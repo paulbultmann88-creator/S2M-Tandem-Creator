@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>NewsFlow</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<style>
+  *{-webkit-tap-highlight-color:transparent;}
+  body{background:#f5f5f5;font-family:'Source Sans 3',sans-serif;}
+  .serif{font-family:'DM Serif Display',serif;}
+  .hide-scroll::-webkit-scrollbar{display:none;}
+  .hide-scroll{-ms-overflow-style:none;scrollbar-width:none;}
+  @keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+  .skeleton{background:linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%);background-size:400px 100%;animation:shimmer 1.4s infinite;}
+  @keyframes fadeIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+  .fade-in{animation:fadeIn .25s ease-out;}
+  .line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .line-clamp-3{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+</style>
+<script>
+  tailwind.config={theme:{extend:{colors:{brand:'#CC0000'}}}}
+</script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect,useRef,useCallback}=React;
+
+/* ─── CONSTANTS ─────────────────────────────────────────── */
+const TABS=[
+  {id:'welt',  label:'🌍 Welt'},
+  {id:'wirtschaft',label:'📈 Wirtschaft'},
+  {id:'tech',  label:'💻 Tech'},
+  {id:'ai',    label:'🤖 AI'},
+];
+
+const SYSTEM_PROMPT=`Du bist ein deutschsprachiger News-Redakteur im Stil der Tagesschau.
+Deine Aufgabe: Recherchiere über Web Search die aktuellsten und wichtigsten Nachrichten zur angegebenen Kategorie aus seriösen Quellen (z.B. Reuters, dpa, Spiegel, Zeit, FAZ, Handelsblatt, heise.de, The Verge, TechCrunch, MIT Technology Review).
+
+Erstelle EXAKT 5 Artikel im folgenden JSON-Format (nur reines JSON, kein Markdown, keine Erklärungen, kein \`\`\`json):
+
+{"articles":[{"id":"eindeutige_id","headline":"Prägnante sachliche Überschrift (max 80 Zeichen)","subheadline":"Ergänzende Einordnung in einem Satz","publishedAt":"ISO 8601","category":"welt|wirtschaft|tech|ai","imageQuery":"englischer Suchbegriff für Unsplash","body":"Vollständiger Artikeltext im Tagesschau-Stil: sachlich nüchtern informativ. 3–5 Absätze. Erster Absatz: Kern-Nachricht (W-Fragen). Weitere Absätze: Kontext Hintergründe Einordnung Reaktionen. Absätze getrennt durch doppeltes Newline \\n\\n","sourceLabel":"Name der Hauptquelle","sourceUrl":"URL zum Originalartikel"}]}
+
+Sortiere die Artikel chronologisch – neueste zuerst. Verwende nur verifizierbare aktuelle Informationen.`;
+
+const USER_PROMPTS={
+  welt:'Recherchiere die 5 aktuellsten wichtigsten internationalen Weltnachrichten von heute.',
+  wirtschaft:'Recherchiere die 5 aktuellsten wichtigsten Wirtschaftsnachrichten von heute.',
+  tech:'Recherchiere die 5 aktuellsten wichtigsten Technologie-Nachrichten von heute.',
+  ai:'Recherchiere die 5 aktuellsten wichtigsten Nachrichten rund um Künstliche Intelligenz von heute.',
+};
+
+/* ─── ICONS ─────────────────────────────────────────────── */
+const IconBack=()=><svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>;
+const IconRefresh=({spin})=><svg className={`w-5 h-5 ${spin?'animate-spin':''}`} fill="currentColor" viewBox="0 0 24 24"><path d="M17.65 6.35A7.96 7.96 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>;
+const IconExternal=()=><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>;
+const IconCamera=()=><svg className="w-10 h-10 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>;
+const IconKey=()=><svg className="w-8 h-8 text-brand" fill="currentColor" viewBox="0 0 24 24"><path d="M12.65 10A5.99 5.99 0 007 6c-3.31 0-6 2.69-6 6s2.69 6 6 6a5.99 5.99 0 005.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>;
+
+/* ─── HELPERS ────────────────────────────────────────────── */
+function imgUrl(query,w=800,h=450){
+  return `https://source.unsplash.com/${w}x${h}/?${encodeURIComponent(query||'news')}`;
+}
+function formatDate(iso){
+  try{
+    const d=new Date(iso);
+    return d.toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'})
+      +' · '+d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})+' Uhr';
+  }catch{return iso;}
+}
+function parseArticles(text){
+  // strip any markdown fences
+  let t=text.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+  // find first { to last }
+  const s=t.indexOf('{');
+  const e=t.lastIndexOf('}');
+  if(s===-1||e===-1)throw new Error('Kein JSON gefunden');
+  return JSON.parse(t.slice(s,e+1));
+}
+
+/* ─── API ────────────────────────────────────────────────── */
+async function fetchNews(apiKey,tab){
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':apiKey,
+      'anthropic-version':'2023-06-01',
+      'anthropic-beta':'web-search-2025-03-05',
+      'anthropic-dangerous-direct-browser-access':'true',
+    },
+    body:JSON.stringify({
+      model:'claude-sonnet-4-5',
+      max_tokens:8000,
+      tools:[{type:'web_search_20250305',name:'web_search'}],
+      system:SYSTEM_PROMPT,
+      messages:[{role:'user',content:USER_PROMPTS[tab]}],
+    }),
+  });
+  if(!res.ok){
+    const err=await res.json().catch(()=>({error:{message:res.statusText}}));
+    throw new Error(err?.error?.message||`HTTP ${res.status}`);
+  }
+  const data=await res.json();
+  // find last text block
+  const blocks=(data.content||[]).filter(b=>b.type==='text');
+  if(!blocks.length)throw new Error('Leere Antwort von der API');
+  const last=blocks[blocks.length-1].text;
+  const parsed=parseArticles(last);
+  if(!parsed.articles||!parsed.articles.length)throw new Error('Keine Artikel in der Antwort');
+  return parsed.articles;
+}
+
+/* ─── IMG WITH FALLBACK ──────────────────────────────────── */
+function NewsImg({query,w=800,h=450,className=''}){
+  const[err,setErr]=useState(false);
+  const[loaded,setLoaded]=useState(false);
+  const src=imgUrl(query,w,h);
+  if(err)return(
+    <div className={`${className} bg-gray-100 flex items-center justify-center`} style={{aspectRatio:`${w}/${h}`}}>
+      <IconCamera/>
+    </div>
+  );
+  return(
+    <div className={`${className} relative bg-gray-100 overflow-hidden`} style={{aspectRatio:`${w}/${h}`}}>
+      {!loaded&&<div className="absolute inset-0 skeleton"/>}
+      <img
+        src={src}
+        alt={query}
+        className={`w-full h-full object-cover transition-opacity duration-300 ${loaded?'opacity-100':'opacity-0'}`}
+        onLoad={()=>setLoaded(true)}
+        onError={()=>setErr(true)}
+      />
+    </div>
+  );
+}
+
+/* ─── SKELETON ───────────────────────────────────────────── */
+function SkeletonCard(){
+  return(
+    <div className="bg-white rounded-xl overflow-hidden shadow-sm mb-3">
+      <div className="skeleton w-full" style={{aspectRatio:'16/9'}}/>
+      <div className="p-4 space-y-2">
+        <div className="skeleton h-3 w-20 rounded"/>
+        <div className="skeleton h-5 w-full rounded"/>
+        <div className="skeleton h-5 w-4/5 rounded"/>
+        <div className="skeleton h-4 w-3/5 rounded"/>
+        <div className="skeleton h-3 w-2/5 rounded mt-2"/>
+      </div>
+    </div>
+  );
+}
+
+/* ─── ARTICLE CARD ───────────────────────────────────────── */
+function ArticleCard({article,onClick}){
+  const catColors={welt:'text-blue-600',wirtschaft:'text-green-600',tech:'text-purple-600',ai:'text-orange-600'};
+  const catLabels={welt:'Welt',wirtschaft:'Wirtschaft',tech:'Tech',ai:'AI'};
+  return(
+    <div
+      className="bg-white rounded-xl overflow-hidden shadow-sm mb-3 cursor-pointer active:scale-[0.99] transition-transform"
+      onClick={()=>onClick(article)}
+    >
+      <NewsImg query={article.imageQuery} className="w-full"/>
+      <div className="p-4">
+        <span className={`text-xs font-bold uppercase tracking-wider ${catColors[article.category]||'text-brand'}`}>
+          {catLabels[article.category]||article.category}
+        </span>
+        <h2 className="serif text-[1.125rem] leading-snug font-normal mt-1 line-clamp-2 text-gray-900">
+          {article.headline}
+        </h2>
+        <p className="text-sm text-gray-500 mt-1 line-clamp-2 leading-snug">
+          {article.subheadline}
+        </p>
+        <div className="flex items-center gap-1.5 mt-3 text-xs text-gray-400">
+          <span className="font-semibold text-gray-500">{article.sourceLabel}</span>
+          <span>·</span>
+          <span>{formatDate(article.publishedAt)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── ARTICLE DETAIL ─────────────────────────────────────── */
+function ArticleDetail({article,onBack}){
+  const paragraphs=(article.body||'').split(/\n\n+/).filter(Boolean);
+  const mid=Math.min(2,paragraphs.length-1);
+  return(
+    <div className="fade-in bg-white min-h-screen">
+      {/* Nav */}
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-100 flex items-center px-4 py-3 gap-3">
+        <button onClick={onBack} className="text-brand flex items-center gap-1 font-semibold text-sm">
+          <IconBack/> Zurück
+        </button>
+        <span className="flex-1 text-xs font-bold uppercase tracking-wider text-gray-400 truncate">
+          {article.sourceLabel}
+        </span>
+      </div>
+      {/* Hero */}
+      <NewsImg query={article.imageQuery} className="w-full"/>
+      {/* Body */}
+      <div className="px-4 py-5">
+        <span className="text-xs font-bold uppercase tracking-wider text-brand">
+          {article.category?.toUpperCase()}
+        </span>
+        <h1 className="serif text-[1.5rem] leading-tight font-normal mt-2 text-gray-900">
+          {article.headline}
+        </h1>
+        <p className="text-gray-500 text-[0.95rem] mt-2 leading-snug">
+          {article.subheadline}
+        </p>
+        <div className="flex items-center gap-2 text-xs text-gray-400 mt-3 pb-4 border-b border-gray-100">
+          <span className="font-semibold text-gray-500">{article.sourceLabel}</span>
+          <span>·</span>
+          <span>{formatDate(article.publishedAt)}</span>
+        </div>
+        {/* Paragraphs with inline image after paragraph 2 */}
+        <div className="mt-4 space-y-4 text-[1rem] leading-relaxed text-gray-800">
+          {paragraphs.map((p,i)=>(
+            <React.Fragment key={i}>
+              <p>{p}</p>
+              {i===mid&&(
+                <div className="-mx-4">
+                  <NewsImg query={article.imageQuery+' detail'} w={800} h={400} className="w-full"/>
+                </div>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+        {/* Source box */}
+        <div className="mt-8 p-4 bg-gray-50 rounded-xl border-l-4 border-brand">
+          <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">
+            Originalartikel lesen:
+          </p>
+          {article.sourceUrl?(
+            <a
+              href={article.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-brand font-semibold text-[0.95rem] hover:underline"
+            >
+              {article.sourceLabel}
+              <IconExternal/>
+            </a>
+          ):(
+            <span className="text-brand font-semibold">{article.sourceLabel}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── API KEY SCREEN ─────────────────────────────────────── */
+function ApiKeyScreen({onSubmit}){
+  const[val,setVal]=useState('');
+  const[err,setErr]=useState('');
+  function handle(){
+    if(!val.trim().startsWith('sk-')){setErr('Bitte gib einen gültigen Anthropic API-Schlüssel ein (beginnt mit sk-)');return;}
+    onSubmit(val.trim());
+  }
+  return(
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 py-12">
+      <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-6">
+        <IconKey/>
+      </div>
+      <h1 className="serif text-2xl text-gray-900 mb-2">NewsFlow</h1>
+      <p className="text-gray-500 text-sm text-center mb-8 leading-relaxed max-w-xs">
+        Aktuelle Nachrichten via Anthropic KI &amp; Web-Suche.<br/>
+        Gib deinen API-Schlüssel ein um zu starten.
+      </p>
+      <div className="w-full max-w-xs space-y-3">
+        <input
+          type="password"
+          value={val}
+          onChange={e=>{setVal(e.target.value);setErr('');}}
+          onKeyDown={e=>e.key==='Enter'&&handle()}
+          placeholder="sk-ant-..."
+          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+        />
+        {err&&<p className="text-xs text-red-500">{err}</p>}
+        <button
+          onClick={handle}
+          className="w-full bg-brand text-white rounded-xl py-3 font-semibold text-sm"
+        >
+          Starten
+        </button>
+        <p className="text-xs text-gray-400 text-center">
+          API-Schlüssel werden nicht gespeichert
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── MAIN APP ───────────────────────────────────────────── */
+export default function App(){
+  const[apiKey,setApiKey]=useState('');
+  const[activeTab,setActiveTab]=useState('welt');
+  const[articles,setArticles]=useState({});
+  const[loading,setLoading]=useState({});
+  const[error,setError]=useState({});
+  const[selectedArticle,setSelectedArticle]=useState(null);
+  const[refreshSpin,setRefreshSpin]=useState(false);
+  const listRef=useRef(null);
+
+  const loadTab=useCallback(async(tab,force=false)=>{
+    if(loading[tab])return;
+    if(articles[tab]&&!force)return;
+    setLoading(p=>({...p,[tab]:true}));
+    setError(p=>({...p,[tab]:null}));
+    try{
+      const data=await fetchNews(apiKey,tab);
+      setArticles(p=>({...p,[tab]:data}));
+    }catch(e){
+      setError(p=>({...p,[tab]:e.message||'Unbekannter Fehler'}));
+    }finally{
+      setLoading(p=>({...p,[tab]:false}));
+    }
+  },[apiKey,loading,articles]);
+
+  useEffect(()=>{
+    if(apiKey)loadTab(activeTab);
+  },[activeTab,apiKey]);
+
+  function handleRefresh(){
+    setRefreshSpin(true);
+    setArticles(p=>({...p,[activeTab]:undefined}));
+    loadTab(activeTab,true).finally(()=>setRefreshSpin(false));
+  }
+
+  if(!apiKey)return <ApiKeyScreen onSubmit={k=>{setApiKey(k);}}/>;
+  if(selectedArticle)return(
+    <div className="max-w-[430px] mx-auto min-h-screen">
+      <ArticleDetail article={selectedArticle} onBack={()=>setSelectedArticle(null)}/>
+    </div>
+  );
+
+  const cur=articles[activeTab]||[];
+  const isLoading=loading[activeTab];
+  const curErr=error[activeTab];
+
+  return(
+    <div className="max-w-[430px] mx-auto min-h-screen bg-[#f5f5f5]"
+         style={{boxShadow:'0 0 60px rgba(0,0,0,.12)'}}>
+      {/* Header */}
+      <header className="sticky top-0 z-20 bg-white shadow-sm">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-brand rounded-md flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H7l5-8v4h4l-5 8z"/>
+              </svg>
+            </div>
+            <span className="serif text-xl text-gray-900">NewsFlow</span>
+          </div>
+          <button
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="text-gray-500 active:text-brand transition-colors p-1"
+          >
+            <IconRefresh spin={refreshSpin||isLoading}/>
+          </button>
+        </div>
+        {/* Tabs */}
+        <div className="flex hide-scroll overflow-x-auto border-t border-gray-100">
+          {TABS.map(t=>(
+            <button
+              key={t.id}
+              onClick={()=>setActiveTab(t.id)}
+              className={`flex-shrink-0 px-4 py-3 text-sm font-semibold transition-colors relative ${
+                activeTab===t.id?'text-brand':'text-gray-500'
+              }`}
+            >
+              {t.label}
+              {activeTab===t.id&&(
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand"/>
+              )}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      {/* Feed */}
+      <main ref={listRef} className="px-3 py-3">
+        {isLoading&&!cur.length&&(
+          <>
+            <SkeletonCard/><SkeletonCard/><SkeletonCard/>
+          </>
+        )}
+        {curErr&&(
+          <div className="bg-white rounded-xl p-6 shadow-sm text-center">
+            <p className="text-brand font-semibold mb-1">Fehler beim Laden</p>
+            <p className="text-gray-500 text-sm mb-4 leading-relaxed">{curErr}</p>
+            <button
+              onClick={()=>loadTab(activeTab,true)}
+              className="bg-brand text-white px-5 py-2 rounded-lg text-sm font-semibold"
+            >
+              Nochmal versuchen
+            </button>
+          </div>
+        )}
+        {cur.map(a=>(
+          <ArticleCard key={a.id} article={a} onClick={setSelectedArticle}/>
+        ))}
+        {isLoading&&cur.length>0&&(
+          <div className="flex justify-center py-4">
+            <div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin"/>
+          </div>
+        )}
+        {!isLoading&&!curErr&&!cur.length&&(
+          <div className="text-center py-12 text-gray-400 text-sm">
+            Keine Artikel gefunden
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
