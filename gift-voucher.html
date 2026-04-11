@@ -95,6 +95,34 @@ body { margin: 0; padding: 0; font-family: 'DM Sans', sans-serif; background: #F
   animation: grain 0.5s steps(1) infinite;
   opacity: 0.5;
 }
+
+/* ─── Responsive / Mobile ─── */
+.screen-root {
+  min-height: 100svh;
+  padding: clamp(1rem, 5vw, 2rem);
+  padding-bottom: calc(clamp(1rem, 5vw, 2rem) + 4.5rem);
+}
+.env-svg { max-width: min(300px, 84vw) !important; }
+.code-text {
+  font-size: clamp(0.72rem, 3.6vw, 1rem);
+  letter-spacing: clamp(0.02em, 0.4vw, 0.06em);
+  word-break: break-all;
+  white-space: normal;
+}
+@media (max-width: 480px) {
+  .voucher-card  { padding: 1.4rem 1.1rem 1.4rem !important; }
+  .inner-border  { padding: 1rem 0.75rem !important; }
+  .stamp-wrap    { top: 10px !important; right: 10px !important; }
+  .stamp-wrap svg { width: 50px !important; }
+  .postcard-box  { padding: 1.25rem 1.1rem !important; margin-top: 1.5rem !important; }
+  .postcard-text { font-size: 0.88rem !important; }
+  .botanical-corner { width: 58px !important; }
+  .s1-sub { font-size: 1.1rem !important; }
+}
+@media (max-width: 360px) {
+  .botanical-corner { display: none !important; }
+  .stamp-wrap svg { width: 44px !important; }
+}
 </style>
 </head>
 <body>
@@ -243,6 +271,7 @@ const Stamp = () => (
 function EnvelopeSVG({ opening }) {
   return (
     <svg viewBox="0 0 320 220" fill="none" xmlns="http://www.w3.org/2000/svg"
+      className="env-svg"
       style={{ width: '100%', maxWidth: 320, filter: 'drop-shadow(0 12px 32px rgba(59,42,26,0.18))' }}>
       {/* Body */}
       <rect x="4" y="60" width="312" height="156" rx="14" fill="#FAF6EE"/>
@@ -255,15 +284,14 @@ function EnvelopeSVG({ opening }) {
       <circle cx="160" cy="138" r="18" fill="#C4714F"/>
       <circle cx="160" cy="138" r="13" fill="#D4956B"/>
       <text x="160" y="143" textAnchor="middle" fontSize="14" fill="#FAF6EE">🌿</text>
-      {/* Flap */}
+      {/* Flap — outline only */}
       <g style={{
         transformOrigin: '160px 60px',
         transform: opening ? 'rotateX(-180deg)' : 'rotateX(0deg)',
         transition: 'transform 0.7s cubic-bezier(0.4,0,0.2,1)',
       }}>
-        <path d="M4 60 L160 148 L316 60 L300 4 Q160 38 20 4 Z" fill="#C4714F"/>
-        <path d="M4 60 L160 148 L316 60 L300 4 Q160 38 20 4 Z" stroke="#A85B38" strokeWidth="1.5"/>
-        <path d="M70 30 C90 20 120 16 160 20 C200 16 230 20 250 30" stroke="#FAF6EE" strokeWidth="1.2" strokeOpacity="0.4"/>
+        <path d="M4 60 L160 148 L316 60 L300 4 Q160 38 20 4 Z"
+          fill="none" stroke="#C4714F" strokeWidth="2" strokeLinejoin="round"/>
       </g>
       {/* Botanical on envelope */}
       <g opacity="0.3">
@@ -290,31 +318,30 @@ function Screen1({ onOpen }) {
   };
 
   return (
-    <div className="screen-enter" style={{
-      minHeight:'100vh', display:'flex', flexDirection:'column',
+    <div className="screen-enter screen-root" style={{
+      display:'flex', flexDirection:'column',
       alignItems:'center', justifyContent:'center',
       background:'linear-gradient(160deg, #F5ECD7 0%, #EDD9B8 60%, #E8CCB0 100%)',
-      padding: '2rem', textAlign:'center', position:'relative', overflow:'hidden',
+      textAlign:'center', position:'relative', overflow:'hidden',
     }}>
-      {/* Corner botanicals */}
-      <div style={{position:'absolute', bottom:20, left:0}}><BotanicalLeft/></div>
-      <div style={{position:'absolute', bottom:20, right:0}}><BotanicalRight/></div>
+      <div className="botanical-corner" style={{position:'absolute', bottom:20, left:0}}><BotanicalLeft/></div>
+      <div className="botanical-corner" style={{position:'absolute', bottom:20, right:0}}><BotanicalRight/></div>
 
       <p style={{
         fontFamily:"'DM Sans', sans-serif", fontSize:'0.9rem', letterSpacing:'0.12em',
-        textTransform:'uppercase', color:'#8FA67A', fontWeight:600, marginBottom:'2rem',
+        textTransform:'uppercase', color:'#8FA67A', fontWeight:600, marginBottom:'1.5rem',
         opacity: opening ? 0 : 1, transition:'opacity 0.4s',
       }}>
         Psst, Derek…
       </p>
 
-      <div className={opening ? '' : 'envelope-breathe'} style={{marginBottom:'2rem'}}>
+      <div className={opening ? '' : 'envelope-breathe'} style={{marginBottom:'1.5rem', width:'100%', display:'flex', justifyContent:'center'}}>
         <EnvelopeSVG opening={opening}/>
       </div>
 
-      <p style={{
+      <p className="s1-sub" style={{
         fontFamily:"'Playfair Display', serif", fontSize:'1.4rem',
-        color:'#3B2A1A', marginBottom:'0.5rem', fontStyle:'italic',
+        color:'#3B2A1A', marginBottom:'0.25rem', fontStyle:'italic',
         opacity: opening ? 0 : 1, transition:'opacity 0.4s',
       }}>
         something's waiting for you 👇
@@ -323,7 +350,7 @@ function Screen1({ onOpen }) {
       <button
         onClick={handleClick}
         style={{
-          marginTop:'1.5rem',
+          marginTop:'1.25rem',
           background: opening ? '#D4956B' : '#C4714F',
           color:'#FAF6EE', border:'none', borderRadius:'50px',
           padding:'0.85rem 2.2rem', fontFamily:"'DM Sans', sans-serif",
@@ -352,27 +379,27 @@ function Screen2({ onNext }) {
   }, []);
 
   return (
-    <div className="screen-enter" style={{
-      minHeight:'100vh', display:'flex', flexDirection:'column',
+    <div className="screen-enter screen-root" style={{
+      display:'flex', flexDirection:'column',
       alignItems:'center', justifyContent:'center',
       background:'linear-gradient(160deg, #F5ECD7 0%, #EDD9B8 60%, #E8CCB0 100%)',
-      padding:'2rem', textAlign:'center', position:'relative', overflow:'hidden',
+      textAlign:'center', position:'relative', overflow:'hidden',
     }}>
       <Confetti active={confetti}/>
-      <div style={{position:'absolute', bottom:20, left:0}}><BotanicalLeft/></div>
-      <div style={{position:'absolute', bottom:20, right:0}}><BotanicalRight/></div>
+      <div className="botanical-corner" style={{position:'absolute', bottom:20, left:0}}><BotanicalLeft/></div>
+      <div className="botanical-corner" style={{position:'absolute', bottom:20, right:0}}><BotanicalRight/></div>
 
       <h1 style={{
-        fontFamily:"'Playfair Display', serif", fontSize:'clamp(2rem, 6vw, 3rem)',
-        color:'#3B2A1A', marginBottom:'0.5rem', lineHeight:1.2,
+        fontFamily:"'Playfair Display', serif", fontSize:'clamp(1.7rem, 6vw, 3rem)',
+        color:'#3B2A1A', marginBottom:'0.4rem', lineHeight:1.2,
       }}>
         Happy Birthday, Derek! 🎉
       </h1>
 
       <p style={{
         fontFamily:"'Playfair Display', serif", fontStyle:'italic',
-        fontSize:'clamp(0.95rem, 2.5vw, 1.15rem)', color:'#C4714F',
-        maxWidth:440, lineHeight:1.6, marginBottom:'2.5rem',
+        fontSize:'clamp(0.9rem, 2.5vw, 1.1rem)', color:'#C4714F',
+        maxWidth:440, lineHeight:1.6, marginBottom:'1.5rem',
       }}>
         A little something to protect what matters most — your ears.
       </p>
@@ -380,11 +407,10 @@ function Screen2({ onNext }) {
       <EarPlugIcon/>
 
       {/* Postcard */}
-      <div style={{
-        marginTop:'2.5rem', maxWidth:460, width:'100%',
-        background:'#FAF6EE',
-        borderRadius:'1.5rem',
-        padding:'1.75rem 2rem',
+      <div className="postcard-box" style={{
+        marginTop:'1.75rem', maxWidth:460, width:'100%',
+        background:'#FAF6EE', borderRadius:'1.5rem',
+        padding:'1.5rem 1.75rem',
         boxShadow:'0 8px 40px rgba(59,42,26,0.12)',
         border:'1px solid rgba(196,113,79,0.2)',
         position:'relative', overflow:'hidden',
@@ -393,9 +419,9 @@ function Screen2({ onNext }) {
           position:'absolute', top:0, left:0, right:0, height:6,
           background:'repeating-linear-gradient(90deg, #C4714F 0px, #C4714F 20px, #8FA67A 20px, #8FA67A 40px)',
         }}/>
-        <p style={{
-          fontFamily:"'DM Sans', sans-serif", fontSize:'0.98rem',
-          color:'#3B2A1A', lineHeight:1.75, marginTop:'0.5rem',
+        <p className="postcard-text" style={{
+          fontFamily:"'DM Sans', sans-serif", fontSize:'0.96rem',
+          color:'#3B2A1A', lineHeight:1.75, marginTop:'0.5rem', marginBottom:0,
         }}>
           You love music. You love parties. But those speakers don't love your ears back.
           So I'm gifting you a pair of proper, high-fidelity ear plugs — the kind that let
@@ -406,7 +432,7 @@ function Screen2({ onNext }) {
       <button
         onClick={onNext}
         style={{
-          marginTop:'2rem',
+          marginTop:'1.5rem',
           background:'#C4714F', color:'#FAF6EE', border:'none', borderRadius:'50px',
           padding:'0.85rem 2.2rem', fontFamily:"'DM Sans', sans-serif",
           fontSize:'1rem', fontWeight:600, cursor:'pointer',
@@ -427,36 +453,36 @@ function Screen2({ onNext }) {
 ══════════════════════════════════════════ */
 function Screen3() {
   return (
-    <div className="screen-enter" style={{
-      minHeight:'100vh', display:'flex', flexDirection:'column',
+    <div className="screen-enter screen-root" style={{
+      display:'flex', flexDirection:'column',
       alignItems:'center', justifyContent:'center',
       background:'linear-gradient(160deg, #F5ECD7 0%, #EDD9B8 60%, #E8CCB0 100%)',
-      padding:'2rem', textAlign:'center', position:'relative', overflow:'hidden',
+      textAlign:'center', position:'relative', overflowX:'hidden', overflowY:'auto',
     }}>
-      <div style={{position:'absolute', bottom:20, left:0}}><BotanicalLeft/></div>
-      <div style={{position:'absolute', bottom:20, right:0}}><BotanicalRight/></div>
+      <div className="botanical-corner" style={{position:'absolute', bottom:20, left:0}}><BotanicalLeft/></div>
+      <div className="botanical-corner" style={{position:'absolute', bottom:20, right:0}}><BotanicalRight/></div>
 
       <p style={{
         fontFamily:"'DM Sans', sans-serif", fontSize:'0.8rem', letterSpacing:'0.14em',
-        textTransform:'uppercase', color:'#8FA67A', fontWeight:600, marginBottom:'1.5rem',
+        textTransform:'uppercase', color:'#8FA67A', fontWeight:600, marginBottom:'1.25rem',
       }}>
         Your Voucher
       </p>
 
       {/* Voucher Card */}
-      <div className="shimmer-card" style={{
+      <div className="shimmer-card voucher-card" style={{
         position:'relative', maxWidth:460, width:'100%',
         borderRadius:'1.5rem',
         boxShadow:'0 12px 48px rgba(59,42,26,0.18)',
         padding:'2rem 1.75rem 2rem',
       }}>
         {/* Stamp in top-right */}
-        <div style={{position:'absolute', top:14, right:14, zIndex:3}}>
+        <div className="stamp-wrap" style={{position:'absolute', top:14, right:14, zIndex:3}}>
           <Stamp/>
         </div>
 
         {/* Ear plug icon + title */}
-        <div style={{marginBottom:'1.4rem', paddingRight:48}}>
+        <div style={{marginBottom:'1.2rem', paddingRight:48}}>
           <EarPlugBadge/>
           <h2 style={{
             fontFamily:"'Playfair Display', serif",
@@ -468,7 +494,7 @@ function Screen3() {
         </div>
 
         {/* Inner bordered content area — always fits height */}
-        <div style={{
+        <div className="inner-border" style={{
           position:'relative',
           border:'1.5px dashed rgba(196,113,79,0.45)',
           borderRadius:14,
@@ -503,10 +529,12 @@ function Screen3() {
             background:'rgba(59,42,26,0.07)', borderRadius:'50px',
             padding:'0.65rem 1.1rem', display:'inline-block',
             border:'1.5px dashed rgba(196,113,79,0.5)',
+            maxWidth:'100%',
           }}>
-            <span style={{
+            <span className="code-text" style={{
               fontFamily:"'DM Mono', monospace", fontSize:'1rem',
               color:'#3B2A1A', fontWeight:500, letterSpacing:'0.06em',
+              display:'inline-block',
             }}>
               DEREK-BDAY-BLN-2026
             </span>
