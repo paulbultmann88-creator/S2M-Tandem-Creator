@@ -606,41 +606,43 @@ function Screen4({ onClose }) {
 }
 
 /* ══════════════════════════════════════════
-   MUSIC — Web Audio API synthesizer
-   Happy Bossa-inspired melody in C major
+   MUSIC — "Happy Birthday to You" (Public Domain)
+   Synthesized via Web Audio API, loops continuously
 ══════════════════════════════════════════ */
 function useBirthdayMusic() {
-  const ctxRef   = useRef(null);
-  const mgRef    = useRef(null);
-  const schedRef = useRef(0);
-  const timerRef = useRef(null);
+  const ctxRef     = useRef(null);
+  const mgRef      = useRef(null);
+  const schedRef   = useRef(0);
+  const timerRef   = useRef(null);
   const startedRef = useRef(false);
-  const mutedRef = useRef(false);
+  const mutedRef   = useRef(false);
   const [muted, setMuted] = useState(false);
 
-  const BPM = 116;
-  const B   = 60 / BPM; // seconds per beat
+  const BPM = 96;
+  const B   = 60 / BPM; // seconds per quarter note
 
-  // 24-beat looping melody  [freq_hz, beats]  (0 = rest)
+  // "Happy Birthday to You" melody in C major  [freq_hz, quarter_note_beats]  0 = rest
+  // G3=196  A3=220  B3=247  C4=262  D4=294  E4=330  F4=349  G4=392
   const MELODY = [
-    // Phrase A  (6 beats)
-    [392,0.5],[440,0.5],[523,1],[659,1],[587,0.5],[523,0.5],[0,2],
-    // Phrase B  (6 beats) — ascending run
-    [523,0.5],[587,0.5],[659,0.5],[784,0.5],[880,1],[784,0.5],[659,0.5],[0,2],
-    // Phrase C  (6 beats) — descending resolution
-    [659,1],[587,0.5],[523,0.5],[440,1],[392,1],[0,2],
-    // Phrase D  (6 beats) — joyful climb & land
-    [392,0.5],[523,0.5],[659,0.5],[784,0.5],[880,0.5],[784,0.5],[659,1],[0,1.5],[523,0.5],
-  ];
+    // "Hap-py  Birth-day  to   you"
+    [196,0.5],[196,0.5],[220,1],[196,1],[262,1],[247,2],[0,1],
+    // "Hap-py  Birth-day  to   you"
+    [196,0.5],[196,0.5],[220,1],[196,1],[294,1],[262,2],[0,1],
+    // "Hap-py  Birth-day  dear  Der  -  ek"
+    [196,0.5],[196,0.5],[392,1],[330,1],[262,1],[247,1],[220,2],[0,1],
+    // "Hap-py  Birth-day  to   you"
+    [349,0.5],[349,0.5],[330,1],[262,1],[294,1],[262,3],[0,1],
+  ]; // 30 beats total
 
-  // Bass: I–I–vi–I–V–I  (also 24 beats)
+  // Simple bass — C major / G / F chord roots
   const BASS = [
-    [130.81,6],[130.81,6],   // C–C
-    [110.00,3],[130.81,3],   // Am–C
-    [98.00,3], [130.81,3],   // G–C
-  ];
+    [131, 7],                    // C3 — phrase 1
+    [98,  3.5],[131, 3.5],       // G2→C3 — phrase 2
+    [131, 3.5],[175, 2],[131,2.5],// C3→F2→C3 — phrase 3
+    [98,  3.5],[131, 4.5],       // G2→C3 — phrase 4
+  ]; // 30 beats total
 
-  const LOOP = 24 * B;
+  const LOOP = 30 * B;
 
   const playNote = (freq, t, dur, vol, type = 'sine') => {
     const ctx = ctxRef.current;
@@ -649,23 +651,24 @@ function useBirthdayMusic() {
     const g = ctx.createGain();
     o.type = type;
     o.frequency.value = freq;
-    const atk = Math.min(0.04, dur * B * 0.1);
-    const rel = Math.min(0.08, dur * B * 0.15);
+    const len = dur * B;
+    const atk = Math.min(0.03, len * 0.08);
+    const rel = Math.min(0.12, len * 0.2);
     g.gain.setValueAtTime(0.001, t);
     g.gain.linearRampToValueAtTime(vol, t + atk);
-    g.gain.setValueAtTime(vol * 0.78, t + dur * B - rel);
-    g.gain.exponentialRampToValueAtTime(0.001, t + dur * B);
+    g.gain.setValueAtTime(vol * 0.75, t + len - rel);
+    g.gain.exponentialRampToValueAtTime(0.001, t + len);
     o.connect(g);
     g.connect(mgRef.current);
     o.start(t);
-    o.stop(t + dur * B + 0.01);
+    o.stop(t + len + 0.01);
   };
 
   const scheduleLoop = (st) => {
     let t = st;
-    MELODY.forEach(([f, d]) => { playNote(f, t, d, 0.28); t += d * B; });
+    MELODY.forEach(([f, d]) => { playNote(f, t, d, 0.30); t += d * B; });
     let bt = st;
-    BASS.forEach(([f, d]) => { playNote(f, bt, d, 0.13, 'triangle'); bt += d * B; });
+    BASS.forEach(([f, d]) => { playNote(f, bt, d, 0.12, 'triangle'); bt += d * B; });
   };
 
   const pump = () => {
@@ -692,7 +695,6 @@ function useBirthdayMusic() {
   };
 
   useEffect(() => {
-    // Attempt instant autoplay; fall back to first user click
     const onFirst = () => startMusic();
     try {
       const probe = new (window.AudioContext || window.webkitAudioContext)();
@@ -721,7 +723,7 @@ function useBirthdayMusic() {
   return { startMusic, toggleMute, muted };
 }
 
-/* ── Mute button (fixed, bottom-right, all screens) ── */
+/* ── Mute button — fixed bottom-right on every screen ── */
 function MuteButton({ muted, onToggle }) {
   const [hover, setHover] = useState(false);
   return (
@@ -733,8 +735,7 @@ function MuteButton({ muted, onToggle }) {
       style={{
         position:'fixed', bottom:20, right:20, zIndex:9999,
         width:50, height:50, borderRadius:'50%',
-        background: muted
-          ? 'rgba(59,42,26,0.80)'
+        background: muted ? 'rgba(59,42,26,0.80)'
           : hover ? '#A85B38' : 'rgba(196,113,79,0.92)',
         border:'2px solid rgba(255,246,238,0.35)',
         color:'#FAF6EE', fontSize:'1.35rem',
@@ -745,7 +746,7 @@ function MuteButton({ muted, onToggle }) {
         transform: hover ? 'scale(1.1)' : 'scale(1)',
       }}
     >
-      {muted ? '🔇' : '🔊'}
+      {muted ? '🔇' : '🎂'}
     </button>
   );
 }
