@@ -95,6 +95,34 @@ body { margin: 0; padding: 0; font-family: 'DM Sans', sans-serif; background: #F
   animation: grain 0.5s steps(1) infinite;
   opacity: 0.5;
 }
+
+/* ─── Responsive / Mobile ─── */
+.screen-root {
+  min-height: 100svh;
+  padding: clamp(1rem, 5vw, 2rem);
+  padding-bottom: calc(clamp(1rem, 5vw, 2rem) + 4.5rem);
+}
+.env-svg { max-width: min(300px, 84vw) !important; }
+.code-text {
+  font-size: clamp(0.72rem, 3.6vw, 1rem);
+  letter-spacing: clamp(0.02em, 0.4vw, 0.06em);
+  word-break: break-all;
+  white-space: normal;
+}
+@media (max-width: 480px) {
+  .voucher-card  { padding: 1.4rem 1.1rem 1.4rem !important; }
+  .inner-border  { padding: 1rem 0.75rem !important; }
+  .stamp-wrap    { top: 10px !important; right: 10px !important; }
+  .stamp-wrap svg { width: 50px !important; }
+  .postcard-box  { padding: 1.25rem 1.1rem !important; margin-top: 1.5rem !important; }
+  .postcard-text { font-size: 0.88rem !important; }
+  .botanical-corner { width: 58px !important; }
+  .s1-sub { font-size: 1.1rem !important; }
+}
+@media (max-width: 360px) {
+  .botanical-corner { display: none !important; }
+  .stamp-wrap svg { width: 44px !important; }
+}
 </style>
 </head>
 <body>
@@ -200,30 +228,31 @@ const DJDeck = () => (
   </svg>
 );
 
-/* ── Voucher Border SVG ── */
-const VoucherBorder = () => (
-  <svg viewBox="0 0 400 240" fill="none" xmlns="http://www.w3.org/2000/svg"
-    style={{position:'absolute', inset:0, width:'100%', height:'100%', pointerEvents:'none'}}>
-    <rect x="6" y="6" width="388" height="228" rx="16" stroke="#C4714F" strokeWidth="1.5" strokeDasharray="6 4" opacity="0.5"/>
-    {/* Corner botanicals */}
-    <g opacity="0.5">
-      <path d="M20 20 C20 20 30 35 45 30 C55 26 58 18 20 20" fill="#8FA67A"/>
-      <path d="M20 20 C20 20 15 38 28 46 C38 52 48 44 20 20" fill="#8FA67A"/>
-      <circle cx="48" cy="22" r="2.5" fill="#C4714F"/>
-      <circle cx="22" cy="48" r="2" fill="#C4714F"/>
-    </g>
-    <g opacity="0.5" transform="translate(400,0) scale(-1,1)">
-      <path d="M20 20 C20 20 30 35 45 30 C55 26 58 18 20 20" fill="#C4714F"/>
-      <path d="M20 20 C20 20 15 38 28 46 C38 52 48 44 20 20" fill="#C4714F"/>
-    </g>
-    <g opacity="0.5" transform="translate(0,240) scale(1,-1)">
-      <path d="M20 20 C20 20 30 35 45 30 C55 26 58 18 20 20" fill="#C4714F"/>
-      <path d="M20 20 C20 20 15 38 28 46 C38 52 48 44 20 20" fill="#C4714F"/>
-    </g>
-    <g opacity="0.5" transform="translate(400,240) scale(-1,-1)">
-      <path d="M20 20 C20 20 30 35 45 30 C55 26 58 18 20 20" fill="#8FA67A"/>
-      <path d="M20 20 C20 20 15 38 28 46 C38 52 48 44 20 20" fill="#8FA67A"/>
-    </g>
+/* ── Corner leaf for inner voucher border ── */
+const CornerLeaf = ({ tx, ty }) => (
+  <svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg"
+    style={{
+      position:'absolute', width:30, height:30, pointerEvents:'none',
+      top: ty === 'top' ? -1 : undefined, bottom: ty === 'bot' ? -1 : undefined,
+      left: tx === 'left' ? -1 : undefined, right: tx === 'right' ? -1 : undefined,
+      transform: `scale(${tx==='right'?-1:1},${ty==='bot'?-1:1})`,
+    }}>
+    <path d="M5 5 C5 5 16 20 28 16 C36 13 37 5 5 5" fill="#8FA67A" opacity="0.65"/>
+    <path d="M5 5 C5 5 3 20 14 26 C22 30 30 24 5 5" fill="#C4714F" opacity="0.55"/>
+    <circle cx="29" cy="8" r="2" fill="#C4714F" opacity="0.5"/>
+  </svg>
+);
+
+/* ── Simplified ear plug icon for voucher header ── */
+const EarPlugBadge = () => (
+  <svg viewBox="0 0 64 28" fill="none" xmlns="http://www.w3.org/2000/svg"
+    style={{width:52, display:'block', margin:'0 auto 0.6rem'}}>
+    <ellipse cx="10" cy="14" rx="8" ry="12" fill="#C4714F" opacity="0.82"/>
+    <ellipse cx="10" cy="14" rx="4.5" ry="7.5" fill="#D4956B"/>
+    <ellipse cx="54" cy="14" rx="8" ry="12" fill="#C4714F" opacity="0.82"/>
+    <ellipse cx="54" cy="14" rx="4.5" ry="7.5" fill="#D4956B"/>
+    <path d="M18 11 C26 7 38 7 46 11" stroke="#8FA67A" strokeWidth="2.2" strokeLinecap="round"/>
+    <path d="M18 17 C26 21 38 21 46 17" stroke="#8FA67A" strokeWidth="2.2" strokeLinecap="round"/>
   </svg>
 );
 
@@ -234,7 +263,7 @@ const Stamp = () => (
     <circle cx="40" cy="40" r="30" stroke="#C4714F" strokeWidth="1"/>
     <text x="40" y="35" textAnchor="middle" fontSize="8" fill="#C4714F" fontFamily="DM Sans" fontWeight="700" letterSpacing="2">BERLIN</text>
     <text x="40" y="47" textAnchor="middle" fontSize="14" fill="#C4714F">🎁</text>
-    <text x="40" y="57" textAnchor="middle" fontSize="7" fill="#C4714F" fontFamily="DM Sans" fontWeight="600" letterSpacing="1">2025</text>
+    <text x="40" y="57" textAnchor="middle" fontSize="7" fill="#C4714F" fontFamily="DM Sans" fontWeight="600" letterSpacing="1">2026</text>
   </svg>
 );
 
@@ -242,6 +271,7 @@ const Stamp = () => (
 function EnvelopeSVG({ opening }) {
   return (
     <svg viewBox="0 0 320 220" fill="none" xmlns="http://www.w3.org/2000/svg"
+      className="env-svg"
       style={{ width: '100%', maxWidth: 320, filter: 'drop-shadow(0 12px 32px rgba(59,42,26,0.18))' }}>
       {/* Body */}
       <rect x="4" y="60" width="312" height="156" rx="14" fill="#FAF6EE"/>
@@ -254,15 +284,14 @@ function EnvelopeSVG({ opening }) {
       <circle cx="160" cy="138" r="18" fill="#C4714F"/>
       <circle cx="160" cy="138" r="13" fill="#D4956B"/>
       <text x="160" y="143" textAnchor="middle" fontSize="14" fill="#FAF6EE">🌿</text>
-      {/* Flap */}
+      {/* Flap — outline only */}
       <g style={{
         transformOrigin: '160px 60px',
         transform: opening ? 'rotateX(-180deg)' : 'rotateX(0deg)',
         transition: 'transform 0.7s cubic-bezier(0.4,0,0.2,1)',
       }}>
-        <path d="M4 60 L160 148 L316 60 L300 4 Q160 38 20 4 Z" fill="#C4714F"/>
-        <path d="M4 60 L160 148 L316 60 L300 4 Q160 38 20 4 Z" stroke="#A85B38" strokeWidth="1.5"/>
-        <path d="M70 30 C90 20 120 16 160 20 C200 16 230 20 250 30" stroke="#FAF6EE" strokeWidth="1.2" strokeOpacity="0.4"/>
+        <path d="M4 60 L160 148 L316 60 L300 4 Q160 38 20 4 Z"
+          fill="none" stroke="#C4714F" strokeWidth="2" strokeLinejoin="round"/>
       </g>
       {/* Botanical on envelope */}
       <g opacity="0.3">
@@ -289,31 +318,30 @@ function Screen1({ onOpen }) {
   };
 
   return (
-    <div className="screen-enter" style={{
-      minHeight:'100vh', display:'flex', flexDirection:'column',
+    <div className="screen-enter screen-root" style={{
+      display:'flex', flexDirection:'column',
       alignItems:'center', justifyContent:'center',
       background:'linear-gradient(160deg, #F5ECD7 0%, #EDD9B8 60%, #E8CCB0 100%)',
-      padding: '2rem', textAlign:'center', position:'relative', overflow:'hidden',
+      textAlign:'center', position:'relative', overflow:'hidden',
     }}>
-      {/* Corner botanicals */}
-      <div style={{position:'absolute', bottom:20, left:0}}><BotanicalLeft/></div>
-      <div style={{position:'absolute', bottom:20, right:0}}><BotanicalRight/></div>
+      <div className="botanical-corner" style={{position:'absolute', bottom:20, left:0}}><BotanicalLeft/></div>
+      <div className="botanical-corner" style={{position:'absolute', bottom:20, right:0}}><BotanicalRight/></div>
 
       <p style={{
         fontFamily:"'DM Sans', sans-serif", fontSize:'0.9rem', letterSpacing:'0.12em',
-        textTransform:'uppercase', color:'#8FA67A', fontWeight:600, marginBottom:'2rem',
+        textTransform:'uppercase', color:'#8FA67A', fontWeight:600, marginBottom:'1.5rem',
         opacity: opening ? 0 : 1, transition:'opacity 0.4s',
       }}>
         Psst, Derek…
       </p>
 
-      <div className={opening ? '' : 'envelope-breathe'} style={{marginBottom:'2rem'}}>
+      <div className={opening ? '' : 'envelope-breathe'} style={{marginBottom:'1.5rem', width:'100%', display:'flex', justifyContent:'center'}}>
         <EnvelopeSVG opening={opening}/>
       </div>
 
-      <p style={{
+      <p className="s1-sub" style={{
         fontFamily:"'Playfair Display', serif", fontSize:'1.4rem',
-        color:'#3B2A1A', marginBottom:'0.5rem', fontStyle:'italic',
+        color:'#3B2A1A', marginBottom:'0.25rem', fontStyle:'italic',
         opacity: opening ? 0 : 1, transition:'opacity 0.4s',
       }}>
         something's waiting for you 👇
@@ -322,7 +350,7 @@ function Screen1({ onOpen }) {
       <button
         onClick={handleClick}
         style={{
-          marginTop:'1.5rem',
+          marginTop:'1.25rem',
           background: opening ? '#D4956B' : '#C4714F',
           color:'#FAF6EE', border:'none', borderRadius:'50px',
           padding:'0.85rem 2.2rem', fontFamily:"'DM Sans', sans-serif",
@@ -351,27 +379,27 @@ function Screen2({ onNext }) {
   }, []);
 
   return (
-    <div className="screen-enter" style={{
-      minHeight:'100vh', display:'flex', flexDirection:'column',
+    <div className="screen-enter screen-root" style={{
+      display:'flex', flexDirection:'column',
       alignItems:'center', justifyContent:'center',
       background:'linear-gradient(160deg, #F5ECD7 0%, #EDD9B8 60%, #E8CCB0 100%)',
-      padding:'2rem', textAlign:'center', position:'relative', overflow:'hidden',
+      textAlign:'center', position:'relative', overflow:'hidden',
     }}>
       <Confetti active={confetti}/>
-      <div style={{position:'absolute', bottom:20, left:0}}><BotanicalLeft/></div>
-      <div style={{position:'absolute', bottom:20, right:0}}><BotanicalRight/></div>
+      <div className="botanical-corner" style={{position:'absolute', bottom:20, left:0}}><BotanicalLeft/></div>
+      <div className="botanical-corner" style={{position:'absolute', bottom:20, right:0}}><BotanicalRight/></div>
 
       <h1 style={{
-        fontFamily:"'Playfair Display', serif", fontSize:'clamp(2rem, 6vw, 3rem)',
-        color:'#3B2A1A', marginBottom:'0.5rem', lineHeight:1.2,
+        fontFamily:"'Playfair Display', serif", fontSize:'clamp(1.7rem, 6vw, 3rem)',
+        color:'#3B2A1A', marginBottom:'0.4rem', lineHeight:1.2,
       }}>
         Happy Birthday, Derek! 🎉
       </h1>
 
       <p style={{
         fontFamily:"'Playfair Display', serif", fontStyle:'italic',
-        fontSize:'clamp(0.95rem, 2.5vw, 1.15rem)', color:'#C4714F',
-        maxWidth:440, lineHeight:1.6, marginBottom:'2.5rem',
+        fontSize:'clamp(0.9rem, 2.5vw, 1.1rem)', color:'#C4714F',
+        maxWidth:440, lineHeight:1.6, marginBottom:'1.5rem',
       }}>
         A little something to protect what matters most — your ears.
       </p>
@@ -379,11 +407,10 @@ function Screen2({ onNext }) {
       <EarPlugIcon/>
 
       {/* Postcard */}
-      <div style={{
-        marginTop:'2.5rem', maxWidth:460, width:'100%',
-        background:'#FAF6EE',
-        borderRadius:'1.5rem',
-        padding:'1.75rem 2rem',
+      <div className="postcard-box" style={{
+        marginTop:'1.75rem', maxWidth:460, width:'100%',
+        background:'#FAF6EE', borderRadius:'1.5rem',
+        padding:'1.5rem 1.75rem',
         boxShadow:'0 8px 40px rgba(59,42,26,0.12)',
         border:'1px solid rgba(196,113,79,0.2)',
         position:'relative', overflow:'hidden',
@@ -392,9 +419,9 @@ function Screen2({ onNext }) {
           position:'absolute', top:0, left:0, right:0, height:6,
           background:'repeating-linear-gradient(90deg, #C4714F 0px, #C4714F 20px, #8FA67A 20px, #8FA67A 40px)',
         }}/>
-        <p style={{
-          fontFamily:"'DM Sans', sans-serif", fontSize:'0.98rem',
-          color:'#3B2A1A', lineHeight:1.75, marginTop:'0.5rem',
+        <p className="postcard-text" style={{
+          fontFamily:"'DM Sans', sans-serif", fontSize:'0.96rem',
+          color:'#3B2A1A', lineHeight:1.75, marginTop:'0.5rem', marginBottom:0,
         }}>
           You love music. You love parties. But those speakers don't love your ears back.
           So I'm gifting you a pair of proper, high-fidelity ear plugs — the kind that let
@@ -405,7 +432,7 @@ function Screen2({ onNext }) {
       <button
         onClick={onNext}
         style={{
-          marginTop:'2rem',
+          marginTop:'1.5rem',
           background:'#C4714F', color:'#FAF6EE', border:'none', borderRadius:'50px',
           padding:'0.85rem 2.2rem', fontFamily:"'DM Sans', sans-serif",
           fontSize:'1rem', fontWeight:600, cursor:'pointer',
@@ -424,105 +451,103 @@ function Screen2({ onNext }) {
 /* ══════════════════════════════════════════
    SCREEN 3 — The Voucher
 ══════════════════════════════════════════ */
-function Screen3({ onBonus }) {
+function Screen3() {
   return (
-    <div className="screen-enter" style={{
-      minHeight:'100vh', display:'flex', flexDirection:'column',
+    <div className="screen-enter screen-root" style={{
+      display:'flex', flexDirection:'column',
       alignItems:'center', justifyContent:'center',
       background:'linear-gradient(160deg, #F5ECD7 0%, #EDD9B8 60%, #E8CCB0 100%)',
-      padding:'2rem', textAlign:'center', position:'relative', overflow:'hidden',
+      textAlign:'center', position:'relative', overflowX:'hidden', overflowY:'auto',
     }}>
-      <div style={{position:'absolute', bottom:20, left:0}}><BotanicalLeft/></div>
-      <div style={{position:'absolute', bottom:20, right:0}}><BotanicalRight/></div>
+      <div className="botanical-corner" style={{position:'absolute', bottom:20, left:0}}><BotanicalLeft/></div>
+      <div className="botanical-corner" style={{position:'absolute', bottom:20, right:0}}><BotanicalRight/></div>
 
       <p style={{
         fontFamily:"'DM Sans', sans-serif", fontSize:'0.8rem', letterSpacing:'0.14em',
-        textTransform:'uppercase', color:'#8FA67A', fontWeight:600, marginBottom:'1.5rem',
+        textTransform:'uppercase', color:'#8FA67A', fontWeight:600, marginBottom:'1.25rem',
       }}>
         Your Voucher
       </p>
 
       {/* Voucher Card */}
-      <div className="shimmer-card" style={{
-        position:'relative', maxWidth:480, width:'100%',
+      <div className="shimmer-card voucher-card" style={{
+        position:'relative', maxWidth:460, width:'100%',
         borderRadius:'1.5rem',
         boxShadow:'0 12px 48px rgba(59,42,26,0.18)',
-        padding:'2.5rem 2rem',
-        overflow:'hidden',
+        padding:'2rem 1.75rem 2rem',
       }}>
-        <VoucherBorder/>
-
         {/* Stamp in top-right */}
-        <div style={{position:'absolute', top:16, right:16}}>
+        <div className="stamp-wrap" style={{position:'absolute', top:14, right:14, zIndex:3}}>
           <Stamp/>
         </div>
 
-        <div style={{position:'relative', zIndex:2}}>
+        {/* Ear plug icon + title */}
+        <div style={{marginBottom:'1.2rem', paddingRight:48}}>
+          <EarPlugBadge/>
           <h2 style={{
             fontFamily:"'Playfair Display', serif",
-            fontSize:'clamp(1.4rem, 4vw, 1.8rem)',
-            color:'#3B2A1A', marginBottom:'1.5rem',
+            fontSize:'clamp(1.3rem, 4vw, 1.7rem)',
+            color:'#3B2A1A', margin:0,
           }}>
-            🎁 Gift Voucher
+            Gift Voucher
           </h2>
+        </div>
+
+        {/* Inner bordered content area — always fits height */}
+        <div className="inner-border" style={{
+          position:'relative',
+          border:'1.5px dashed rgba(196,113,79,0.45)',
+          borderRadius:14,
+          padding:'1.25rem 1rem 1.25rem',
+        }}>
+          <CornerLeaf tx="left"  ty="top"/>
+          <CornerLeaf tx="right" ty="top"/>
+          <CornerLeaf tx="left"  ty="bot"/>
+          <CornerLeaf tx="right" ty="bot"/>
 
           <div style={{
-            display:'flex', flexDirection:'column', gap:'0.9rem',
-            textAlign:'left', marginBottom:'1.5rem',
+            display:'flex', flexDirection:'column', gap:'0.85rem',
+            textAlign:'left', marginBottom:'1.25rem',
           }}>
-            <Row label="For" value="Derek" />
-            <div style={{height:1, background:'rgba(196,113,79,0.2)'}}/>
+            <Row label="For" value="Derek"/>
+            <div style={{height:1, background:'rgba(196,113,79,0.18)'}}/>
             <Row label="Gift" value="1× Premium Ear Plugs — Party Edition" bold/>
             <p style={{
-              fontFamily:"'DM Sans', sans-serif", fontSize:'0.82rem',
-              color:'#7A5840', lineHeight:1.5, paddingLeft:'0.25rem',
-              fontStyle:'italic',
+              fontFamily:"'DM Sans', sans-serif", fontSize:'0.8rem',
+              color:'#7A5840', lineHeight:1.5, paddingLeft:'0.2rem',
+              fontStyle:'italic', margin:0,
             }}>
               High-fidelity hearing protection for the music lover who refuses to compromise on sound quality
             </p>
-            <div style={{height:1, background:'rgba(196,113,79,0.2)'}}/>
+            <div style={{height:1, background:'rgba(196,113,79,0.18)'}}/>
             <Row label="📍 Redeem" value="Berlin — on your next visit"/>
-            <Row label="✅ Valid" value="Forever (because good friendships don't expire)"/>
+            <Row label="✅ Valid"  value="Forever (because good friendships don't expire)"/>
           </div>
 
           {/* Voucher Code */}
           <div style={{
             background:'rgba(59,42,26,0.07)', borderRadius:'50px',
-            padding:'0.7rem 1.2rem', display:'inline-block',
+            padding:'0.65rem 1.1rem', display:'inline-block',
             border:'1.5px dashed rgba(196,113,79,0.5)',
+            maxWidth:'100%',
           }}>
-            <span style={{
-              fontFamily:"'DM Mono', monospace", fontSize:'1.05rem',
+            <span className="code-text" style={{
+              fontFamily:"'DM Mono', monospace", fontSize:'1rem',
               color:'#3B2A1A', fontWeight:500, letterSpacing:'0.06em',
+              display:'inline-block',
             }}>
-              DEREK-BDAY-BLN-2025
+              DEREK-BDAY-BLN-2026
             </span>
           </div>
         </div>
       </div>
 
       <p style={{
-        marginTop:'1.2rem', fontFamily:"'DM Sans', sans-serif",
-        fontSize:'0.82rem', color:'#A07858', letterSpacing:'0.03em',
+        marginTop:'1.1rem', fontFamily:"'DM Sans', sans-serif",
+        fontSize:'0.8rem', color:'#A07858', letterSpacing:'0.03em',
       }}>
         📸 Save as screenshot to keep your voucher
       </p>
-
-      <button
-        onClick={onBonus}
-        style={{
-          marginTop:'1.25rem',
-          background:'transparent', color:'#C4714F',
-          border:'2px solid #C4714F', borderRadius:'50px',
-          padding:'0.75rem 1.8rem', fontFamily:"'DM Sans', sans-serif",
-          fontSize:'0.95rem', fontWeight:600, cursor:'pointer',
-          letterSpacing:'0.04em', transition:'all 0.2s',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background='#C4714F'; e.currentTarget.style.color='#FAF6EE'; }}
-        onMouseLeave={e => { e.currentTarget.style.background='transparent'; e.currentTarget.style.color='#C4714F'; }}
-      >
-        🎵 Play a little birthday tune
-      </button>
     </div>
   );
 }
@@ -609,12 +634,159 @@ function Screen4({ onClose }) {
 }
 
 /* ══════════════════════════════════════════
+   MUSIC — "Happy Birthday to You" (Public Domain)
+   Synthesized via Web Audio API, loops continuously
+══════════════════════════════════════════ */
+function useBirthdayMusic() {
+  const ctxRef     = useRef(null);
+  const mgRef      = useRef(null);
+  const schedRef   = useRef(0);
+  const timerRef   = useRef(null);
+  const startedRef = useRef(false);
+  const mutedRef   = useRef(false);
+  const [muted, setMuted] = useState(false);
+
+  const BPM = 96;
+  const B   = 60 / BPM; // seconds per quarter note
+
+  // "Happy Birthday to You" melody in C major  [freq_hz, quarter_note_beats]  0 = rest
+  // G3=196  A3=220  B3=247  C4=262  D4=294  E4=330  F4=349  G4=392
+  const MELODY = [
+    // "Hap-py  Birth-day  to   you"
+    [196,0.5],[196,0.5],[220,1],[196,1],[262,1],[247,2],[0,1],
+    // "Hap-py  Birth-day  to   you"
+    [196,0.5],[196,0.5],[220,1],[196,1],[294,1],[262,2],[0,1],
+    // "Hap-py  Birth-day  dear  Der  -  ek"
+    [196,0.5],[196,0.5],[392,1],[330,1],[262,1],[247,1],[220,2],[0,1],
+    // "Hap-py  Birth-day  to   you"
+    [349,0.5],[349,0.5],[330,1],[262,1],[294,1],[262,3],[0,1],
+  ]; // 30 beats total
+
+  // Simple bass — C major / G / F chord roots
+  const BASS = [
+    [131, 7],                    // C3 — phrase 1
+    [98,  3.5],[131, 3.5],       // G2→C3 — phrase 2
+    [131, 3.5],[175, 2],[131,2.5],// C3→F2→C3 — phrase 3
+    [98,  3.5],[131, 4.5],       // G2→C3 — phrase 4
+  ]; // 30 beats total
+
+  const LOOP = 30 * B;
+
+  const playNote = (freq, t, dur, vol, type = 'sine') => {
+    const ctx = ctxRef.current;
+    if (!ctx || freq === 0) return;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = type;
+    o.frequency.value = freq;
+    const len = dur * B;
+    const atk = Math.min(0.03, len * 0.08);
+    const rel = Math.min(0.12, len * 0.2);
+    g.gain.setValueAtTime(0.001, t);
+    g.gain.linearRampToValueAtTime(vol, t + atk);
+    g.gain.setValueAtTime(vol * 0.75, t + len - rel);
+    g.gain.exponentialRampToValueAtTime(0.001, t + len);
+    o.connect(g);
+    g.connect(mgRef.current);
+    o.start(t);
+    o.stop(t + len + 0.01);
+  };
+
+  const scheduleLoop = (st) => {
+    let t = st;
+    MELODY.forEach(([f, d]) => { playNote(f, t, d, 0.30); t += d * B; });
+    let bt = st;
+    BASS.forEach(([f, d]) => { playNote(f, bt, d, 0.12, 'triangle'); bt += d * B; });
+  };
+
+  const pump = () => {
+    const ctx = ctxRef.current;
+    if (!ctx) return;
+    while (schedRef.current < ctx.currentTime + 2.5) {
+      scheduleLoop(schedRef.current);
+      schedRef.current += LOOP;
+    }
+    timerRef.current = setTimeout(pump, 400);
+  };
+
+  const startMusic = () => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    ctxRef.current = ctx;
+    const mg = ctx.createGain();
+    mg.gain.value = mutedRef.current ? 0 : 1;
+    mg.connect(ctx.destination);
+    mgRef.current = mg;
+    schedRef.current = ctx.currentTime + 0.1;
+    pump();
+  };
+
+  useEffect(() => {
+    const onFirst = () => startMusic();
+    try {
+      const probe = new (window.AudioContext || window.webkitAudioContext)();
+      if (probe.state === 'running') { probe.close(); setTimeout(startMusic, 150); }
+      else { probe.close(); document.addEventListener('click', onFirst, { once: true }); }
+    } catch(e) {
+      document.addEventListener('click', onFirst, { once: true });
+    }
+    return () => {
+      document.removeEventListener('click', onFirst);
+      clearTimeout(timerRef.current);
+      ctxRef.current?.close();
+    };
+  }, []);
+
+  const toggleMute = () => {
+    const nm = !mutedRef.current;
+    mutedRef.current = nm;
+    setMuted(nm);
+    if (mgRef.current && ctxRef.current) {
+      mgRef.current.gain.setTargetAtTime(nm ? 0 : 1, ctxRef.current.currentTime, 0.15);
+    }
+    if (!startedRef.current) startMusic();
+  };
+
+  return { startMusic, toggleMute, muted };
+}
+
+/* ── Mute button — fixed bottom-right on every screen ── */
+function MuteButton({ muted, onToggle }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      onClick={onToggle}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      title={muted ? 'Musik an' : 'Musik aus'}
+      style={{
+        position:'fixed', bottom:20, right:20, zIndex:9999,
+        width:50, height:50, borderRadius:'50%',
+        background: muted ? 'rgba(59,42,26,0.80)'
+          : hover ? '#A85B38' : 'rgba(196,113,79,0.92)',
+        border:'2px solid rgba(255,246,238,0.35)',
+        color:'#FAF6EE', fontSize:'1.35rem',
+        display:'flex', alignItems:'center', justifyContent:'center',
+        cursor:'pointer', backdropFilter:'blur(10px)',
+        boxShadow:'0 4px 20px rgba(0,0,0,0.22)',
+        transition:'background 0.2s, transform 0.15s',
+        transform: hover ? 'scale(1.1)' : 'scale(1)',
+      }}
+    >
+      {muted ? '🔇' : '🎂'}
+    </button>
+  );
+}
+
+/* ══════════════════════════════════════════
    APP ROOT
 ══════════════════════════════════════════ */
 function App() {
   const [screen, setScreen] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [key, setKey] = useState(0);
+  const { startMusic, toggleMute, muted } = useBirthdayMusic();
 
   const goTo = (n) => {
     setKey(k => k + 1);
@@ -624,10 +796,11 @@ function App() {
   return (
     <div style={{ position:'relative' }}>
       <div className="grain-overlay"/>
-      {screen === 1 && <Screen1 key={`s1-${key}`} onOpen={() => goTo(2)}/>}
+      {screen === 1 && <Screen1 key={`s1-${key}`} onOpen={() => { startMusic(); goTo(2); }}/>}
       {screen === 2 && <Screen2 key={`s2-${key}`} onNext={() => goTo(3)}/>}
-      {screen === 3 && <Screen3 key={`s3-${key}`} onBonus={() => setShowModal(true)}/>}
+      {screen === 3 && <Screen3 key={`s3-${key}`}/>}
       {showModal && <Screen4 onClose={() => setShowModal(false)}/>}
+      <MuteButton muted={muted} onToggle={toggleMute}/>
     </div>
   );
 }
