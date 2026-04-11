@@ -200,30 +200,31 @@ const DJDeck = () => (
   </svg>
 );
 
-/* ── Voucher Border SVG ── */
-const VoucherBorder = () => (
-  <svg viewBox="0 0 400 240" fill="none" xmlns="http://www.w3.org/2000/svg"
-    style={{position:'absolute', inset:0, width:'100%', height:'100%', pointerEvents:'none'}}>
-    <rect x="6" y="6" width="388" height="228" rx="16" stroke="#C4714F" strokeWidth="1.5" strokeDasharray="6 4" opacity="0.5"/>
-    {/* Corner botanicals */}
-    <g opacity="0.5">
-      <path d="M20 20 C20 20 30 35 45 30 C55 26 58 18 20 20" fill="#8FA67A"/>
-      <path d="M20 20 C20 20 15 38 28 46 C38 52 48 44 20 20" fill="#8FA67A"/>
-      <circle cx="48" cy="22" r="2.5" fill="#C4714F"/>
-      <circle cx="22" cy="48" r="2" fill="#C4714F"/>
-    </g>
-    <g opacity="0.5" transform="translate(400,0) scale(-1,1)">
-      <path d="M20 20 C20 20 30 35 45 30 C55 26 58 18 20 20" fill="#C4714F"/>
-      <path d="M20 20 C20 20 15 38 28 46 C38 52 48 44 20 20" fill="#C4714F"/>
-    </g>
-    <g opacity="0.5" transform="translate(0,240) scale(1,-1)">
-      <path d="M20 20 C20 20 30 35 45 30 C55 26 58 18 20 20" fill="#C4714F"/>
-      <path d="M20 20 C20 20 15 38 28 46 C38 52 48 44 20 20" fill="#C4714F"/>
-    </g>
-    <g opacity="0.5" transform="translate(400,240) scale(-1,-1)">
-      <path d="M20 20 C20 20 30 35 45 30 C55 26 58 18 20 20" fill="#8FA67A"/>
-      <path d="M20 20 C20 20 15 38 28 46 C38 52 48 44 20 20" fill="#8FA67A"/>
-    </g>
+/* ── Corner leaf for inner voucher border ── */
+const CornerLeaf = ({ tx, ty }) => (
+  <svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg"
+    style={{
+      position:'absolute', width:30, height:30, pointerEvents:'none',
+      top: ty === 'top' ? -1 : undefined, bottom: ty === 'bot' ? -1 : undefined,
+      left: tx === 'left' ? -1 : undefined, right: tx === 'right' ? -1 : undefined,
+      transform: `scale(${tx==='right'?-1:1},${ty==='bot'?-1:1})`,
+    }}>
+    <path d="M5 5 C5 5 16 20 28 16 C36 13 37 5 5 5" fill="#8FA67A" opacity="0.65"/>
+    <path d="M5 5 C5 5 3 20 14 26 C22 30 30 24 5 5" fill="#C4714F" opacity="0.55"/>
+    <circle cx="29" cy="8" r="2" fill="#C4714F" opacity="0.5"/>
+  </svg>
+);
+
+/* ── Simplified ear plug icon for voucher header ── */
+const EarPlugBadge = () => (
+  <svg viewBox="0 0 64 28" fill="none" xmlns="http://www.w3.org/2000/svg"
+    style={{width:52, display:'block', margin:'0 auto 0.6rem'}}>
+    <ellipse cx="10" cy="14" rx="8" ry="12" fill="#C4714F" opacity="0.82"/>
+    <ellipse cx="10" cy="14" rx="4.5" ry="7.5" fill="#D4956B"/>
+    <ellipse cx="54" cy="14" rx="8" ry="12" fill="#C4714F" opacity="0.82"/>
+    <ellipse cx="54" cy="14" rx="4.5" ry="7.5" fill="#D4956B"/>
+    <path d="M18 11 C26 7 38 7 46 11" stroke="#8FA67A" strokeWidth="2.2" strokeLinecap="round"/>
+    <path d="M18 17 C26 21 38 21 46 17" stroke="#8FA67A" strokeWidth="2.2" strokeLinecap="round"/>
   </svg>
 );
 
@@ -234,7 +235,7 @@ const Stamp = () => (
     <circle cx="40" cy="40" r="30" stroke="#C4714F" strokeWidth="1"/>
     <text x="40" y="35" textAnchor="middle" fontSize="8" fill="#C4714F" fontFamily="DM Sans" fontWeight="700" letterSpacing="2">BERLIN</text>
     <text x="40" y="47" textAnchor="middle" fontSize="14" fill="#C4714F">🎁</text>
-    <text x="40" y="57" textAnchor="middle" fontSize="7" fill="#C4714F" fontFamily="DM Sans" fontWeight="600" letterSpacing="1">2025</text>
+    <text x="40" y="57" textAnchor="middle" fontSize="7" fill="#C4714F" fontFamily="DM Sans" fontWeight="600" letterSpacing="1">2026</text>
   </svg>
 );
 
@@ -424,7 +425,7 @@ function Screen2({ onNext }) {
 /* ══════════════════════════════════════════
    SCREEN 3 — The Voucher
 ══════════════════════════════════════════ */
-function Screen3({ onBonus }) {
+function Screen3() {
   return (
     <div className="screen-enter" style={{
       minHeight:'100vh', display:'flex', flexDirection:'column',
@@ -444,85 +445,81 @@ function Screen3({ onBonus }) {
 
       {/* Voucher Card */}
       <div className="shimmer-card" style={{
-        position:'relative', maxWidth:480, width:'100%',
+        position:'relative', maxWidth:460, width:'100%',
         borderRadius:'1.5rem',
         boxShadow:'0 12px 48px rgba(59,42,26,0.18)',
-        padding:'2.5rem 2rem',
-        overflow:'hidden',
+        padding:'2rem 1.75rem 2rem',
       }}>
-        <VoucherBorder/>
-
         {/* Stamp in top-right */}
-        <div style={{position:'absolute', top:16, right:16}}>
+        <div style={{position:'absolute', top:14, right:14, zIndex:3}}>
           <Stamp/>
         </div>
 
-        <div style={{position:'relative', zIndex:2}}>
+        {/* Ear plug icon + title */}
+        <div style={{marginBottom:'1.4rem', paddingRight:48}}>
+          <EarPlugBadge/>
           <h2 style={{
             fontFamily:"'Playfair Display', serif",
-            fontSize:'clamp(1.4rem, 4vw, 1.8rem)',
-            color:'#3B2A1A', marginBottom:'1.5rem',
+            fontSize:'clamp(1.3rem, 4vw, 1.7rem)',
+            color:'#3B2A1A', margin:0,
           }}>
-            🎁 Gift Voucher
+            Gift Voucher
           </h2>
+        </div>
+
+        {/* Inner bordered content area — always fits height */}
+        <div style={{
+          position:'relative',
+          border:'1.5px dashed rgba(196,113,79,0.45)',
+          borderRadius:14,
+          padding:'1.25rem 1rem 1.25rem',
+        }}>
+          <CornerLeaf tx="left"  ty="top"/>
+          <CornerLeaf tx="right" ty="top"/>
+          <CornerLeaf tx="left"  ty="bot"/>
+          <CornerLeaf tx="right" ty="bot"/>
 
           <div style={{
-            display:'flex', flexDirection:'column', gap:'0.9rem',
-            textAlign:'left', marginBottom:'1.5rem',
+            display:'flex', flexDirection:'column', gap:'0.85rem',
+            textAlign:'left', marginBottom:'1.25rem',
           }}>
-            <Row label="For" value="Derek" />
-            <div style={{height:1, background:'rgba(196,113,79,0.2)'}}/>
+            <Row label="For" value="Derek"/>
+            <div style={{height:1, background:'rgba(196,113,79,0.18)'}}/>
             <Row label="Gift" value="1× Premium Ear Plugs — Party Edition" bold/>
             <p style={{
-              fontFamily:"'DM Sans', sans-serif", fontSize:'0.82rem',
-              color:'#7A5840', lineHeight:1.5, paddingLeft:'0.25rem',
-              fontStyle:'italic',
+              fontFamily:"'DM Sans', sans-serif", fontSize:'0.8rem',
+              color:'#7A5840', lineHeight:1.5, paddingLeft:'0.2rem',
+              fontStyle:'italic', margin:0,
             }}>
               High-fidelity hearing protection for the music lover who refuses to compromise on sound quality
             </p>
-            <div style={{height:1, background:'rgba(196,113,79,0.2)'}}/>
+            <div style={{height:1, background:'rgba(196,113,79,0.18)'}}/>
             <Row label="📍 Redeem" value="Berlin — on your next visit"/>
-            <Row label="✅ Valid" value="Forever (because good friendships don't expire)"/>
+            <Row label="✅ Valid"  value="Forever (because good friendships don't expire)"/>
           </div>
 
           {/* Voucher Code */}
           <div style={{
             background:'rgba(59,42,26,0.07)', borderRadius:'50px',
-            padding:'0.7rem 1.2rem', display:'inline-block',
+            padding:'0.65rem 1.1rem', display:'inline-block',
             border:'1.5px dashed rgba(196,113,79,0.5)',
           }}>
             <span style={{
-              fontFamily:"'DM Mono', monospace", fontSize:'1.05rem',
+              fontFamily:"'DM Mono', monospace", fontSize:'1rem',
               color:'#3B2A1A', fontWeight:500, letterSpacing:'0.06em',
             }}>
-              DEREK-BDAY-BLN-2025
+              DEREK-BDAY-BLN-2026
             </span>
           </div>
         </div>
       </div>
 
       <p style={{
-        marginTop:'1.2rem', fontFamily:"'DM Sans', sans-serif",
-        fontSize:'0.82rem', color:'#A07858', letterSpacing:'0.03em',
+        marginTop:'1.1rem', fontFamily:"'DM Sans', sans-serif",
+        fontSize:'0.8rem', color:'#A07858', letterSpacing:'0.03em',
       }}>
         📸 Save as screenshot to keep your voucher
       </p>
-
-      <button
-        onClick={onBonus}
-        style={{
-          marginTop:'1.25rem',
-          background:'transparent', color:'#C4714F',
-          border:'2px solid #C4714F', borderRadius:'50px',
-          padding:'0.75rem 1.8rem', fontFamily:"'DM Sans', sans-serif",
-          fontSize:'0.95rem', fontWeight:600, cursor:'pointer',
-          letterSpacing:'0.04em', transition:'all 0.2s',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background='#C4714F'; e.currentTarget.style.color='#FAF6EE'; }}
-        onMouseLeave={e => { e.currentTarget.style.background='transparent'; e.currentTarget.style.color='#C4714F'; }}
-      >
-        🎵 Play a little birthday tune
-      </button>
     </div>
   );
 }
@@ -772,7 +769,7 @@ function App() {
       <div className="grain-overlay"/>
       {screen === 1 && <Screen1 key={`s1-${key}`} onOpen={() => { startMusic(); goTo(2); }}/>}
       {screen === 2 && <Screen2 key={`s2-${key}`} onNext={() => goTo(3)}/>}
-      {screen === 3 && <Screen3 key={`s3-${key}`} onBonus={() => setShowModal(true)}/>}
+      {screen === 3 && <Screen3 key={`s3-${key}`}/>}
       {showModal && <Screen4 onClose={() => setShowModal(false)}/>}
       <MuteButton muted={muted} onToggle={toggleMute}/>
     </div>
