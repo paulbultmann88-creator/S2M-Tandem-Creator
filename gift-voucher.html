@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Happy Birthday Derek 🎁</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+* { box-sizing: border-box; }
+body { margin: 0; padding: 0; font-family: 'DM Sans', sans-serif; background: #F5ECD7; }
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+@keyframes envelopeFlap {
+  0% { transform: rotateX(0deg); }
+  100% { transform: rotateX(-180deg); }
+}
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes confettiFall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+@keyframes ripple {
+  0% { transform: scale(0.8); opacity: 0.7; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes slideUpModal {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes grain {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-1%, -1%); }
+  30% { transform: translate(1%, 1%); }
+  50% { transform: translate(-1%, 1%); }
+  70% { transform: translate(1%, -1%); }
+  90% { transform: translate(-1%, 0); }
+}
+@keyframes turntableSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes armMove {
+  0%, 100% { transform: rotate(-5deg); }
+  50% { transform: rotate(5deg); }
+}
+
+.screen-enter {
+  animation: fadeSlideUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.envelope-breathe {
+  animation: breathe 3s ease-in-out infinite;
+}
+.envelope-open {
+  animation: envelopeFlap 0.6s ease-in-out forwards;
+}
+.ripple-ring {
+  animation: ripple 2s ease-out infinite;
+}
+.ripple-ring:nth-child(2) { animation-delay: 0.6s; }
+.ripple-ring:nth-child(3) { animation-delay: 1.2s; }
+.shimmer-card {
+  background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.35) 50%, transparent 70%) no-repeat,
+              linear-gradient(135deg, #FAF6EE 0%, #F0E6D0 100%);
+  background-size: 200% 100%, 100% 100%;
+  animation: shimmer 3.5s linear infinite;
+}
+.modal-enter {
+  animation: slideUpModal 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.turntable-spin {
+  animation: turntableSpin 2s linear infinite;
+}
+.arm-move {
+  animation: armMove 2s ease-in-out infinite;
+}
+.grain-overlay {
+  position: fixed; inset: 0; pointer-events: none; z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  animation: grain 0.5s steps(1) infinite;
+  opacity: 0.5;
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* ── Confetti ── */
+function Confetti({ active }) {
+  const colors = ['#C4714F','#8FA67A','#F5ECD7','#E8B89A','#B5C9A8','#D4956B'];
+  const pieces = Array.from({ length: 60 }, (_, i) => i);
+  if (!active) return null;
+  return (
+    <div style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:50, overflow:'hidden' }}>
+      {pieces.map(i => {
+        const left = Math.random() * 100;
+        const delay = Math.random() * 1.5;
+        const dur = 2.5 + Math.random() * 2;
+        const color = colors[i % colors.length];
+        const size = 6 + Math.random() * 8;
+        return (
+          <div key={i} style={{
+            position:'absolute', left:`${left}%`, top:'-12px',
+            width: size, height: size * (Math.random() > 0.5 ? 1 : 2.5),
+            borderRadius: Math.random() > 0.5 ? '50%' : '2px',
+            background: color,
+            animation: `confettiFall ${dur}s ${delay}s ease-in forwards`,
+          }} />
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── Botanical SVG decorations ── */
+const BotanicalLeft = () => (
+  <svg viewBox="0 0 120 300" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:80, opacity:0.35}}>
+    <path d="M60 280 C60 280 58 200 40 160 C22 120 10 90 20 60 C30 30 60 20 60 20" stroke="#8FA67A" strokeWidth="2" strokeLinecap="round"/>
+    <path d="M60 200 C60 200 30 185 18 165 C10 150 15 130 60 200" stroke="#8FA67A" strokeWidth="1.5" fill="#8FA67A" fillOpacity="0.15"/>
+    <path d="M60 160 C60 160 85 140 95 118 C102 100 92 82 60 160" stroke="#8FA67A" strokeWidth="1.5" fill="#8FA67A" fillOpacity="0.15"/>
+    <path d="M58 120 C58 120 32 108 22 88 C14 70 22 55 58 120" stroke="#8FA67A" strokeWidth="1.5" fill="#8FA67A" fillOpacity="0.15"/>
+    <path d="M60 80 C60 80 78 64 84 45 C88 30 80 18 60 80" stroke="#8FA67A" strokeWidth="1.5" fill="#8FA67A" fillOpacity="0.15"/>
+    <circle cx="35" cy="245" r="3" fill="#C4714F" fillOpacity="0.4"/>
+    <circle cx="88" cy="175" r="2.5" fill="#C4714F" fillOpacity="0.4"/>
+    <circle cx="25" cy="95" r="2" fill="#C4714F" fillOpacity="0.4"/>
+  </svg>
+);
+
+const BotanicalRight = () => (
+  <svg viewBox="0 0 120 300" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:80, opacity:0.35, transform:'scaleX(-1)'}}>
+    <path d="M60 280 C60 280 58 200 40 160 C22 120 10 90 20 60 C30 30 60 20 60 20" stroke="#C4714F" strokeWidth="2" strokeLinecap="round"/>
+    <path d="M60 200 C60 200 30 185 18 165 C10 150 15 130 60 200" stroke="#C4714F" strokeWidth="1.5" fill="#C4714F" fillOpacity="0.12"/>
+    <path d="M60 155 C60 155 85 135 95 113 C102 95 92 77 60 155" stroke="#C4714F" strokeWidth="1.5" fill="#C4714F" fillOpacity="0.12"/>
+    <path d="M58 115 C58 115 32 103 22 83 C14 65 22 50 58 115" stroke="#C4714F" strokeWidth="1.5" fill="#C4714F" fillOpacity="0.12"/>
+    <path d="M60 78 C60 78 78 62 84 43 C88 28 80 16 60 78" stroke="#C4714F" strokeWidth="1.5" fill="#C4714F" fillOpacity="0.12"/>
+    <circle cx="35" cy="240" r="2.5" fill="#8FA67A" fillOpacity="0.5"/>
+    <circle cx="88" cy="170" r="2" fill="#8FA67A" fillOpacity="0.5"/>
+  </svg>
+);
+
+/* ── Ear Plug SVG ── */
+const EarPlugIcon = () => (
+  <div style={{ position:'relative', display:'flex', alignItems:'center', justifyContent:'center', width:120, height:120 }}>
+    {[1,2,3].map(i => (
+      <div key={i} className="ripple-ring" style={{
+        position:'absolute', width: 60 + i*30, height: 60 + i*30,
+        borderRadius:'50%', border: `2px solid #C4714F`,
+        opacity: 0.5,
+      }} />
+    ))}
+    <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:60, height:60, position:'relative', zIndex:2}}>
+      <ellipse cx="22" cy="40" rx="10" ry="16" fill="#C4714F" rx="10"/>
+      <ellipse cx="22" cy="40" rx="6" ry="11" fill="#D4956B"/>
+      <ellipse cx="58" cy="40" rx="10" ry="16" fill="#C4714F"/>
+      <ellipse cx="58" cy="40" rx="6" ry="11" fill="#D4956B"/>
+      <path d="M32 36 C37 32 43 32 48 36" stroke="#8FA67A" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M32 44 C37 48 43 48 48 44" stroke="#8FA67A" strokeWidth="2.5" strokeLinecap="round"/>
+    </svg>
+  </div>
+);
+
+/* ── DJ Deck SVG ── */
+const DJDeck = () => (
+  <svg viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:200}}>
+    <rect x="10" y="60" width="180" height="50" rx="8" fill="#3B2A1A" opacity="0.9"/>
+    <circle cx="55" cy="75" r="22" fill="#2a1f14"/>
+    <circle cx="55" cy="75" r="22" fill="none" stroke="#C4714F" strokeWidth="1.5" strokeDasharray="4 3" className="turntable-spin"/>
+    <circle cx="55" cy="75" r="8" fill="#C4714F"/>
+    <circle cx="55" cy="75" r="3" fill="#FAF6EE"/>
+    <circle cx="145" cy="75" r="22" fill="#2a1f14"/>
+    <circle cx="145" cy="75" r="22" fill="none" stroke="#8FA67A" strokeWidth="1.5" strokeDasharray="4 3" className="turntable-spin" style={{animationDirection:'reverse'}}/>
+    <circle cx="145" cy="75" r="8" fill="#8FA67A"/>
+    <circle cx="145" cy="75" r="3" fill="#FAF6EE"/>
+    <g className="arm-move" style={{transformOrigin:'100px 60px'}}>
+      <line x1="100" y1="60" x2="60" y2="72" stroke="#FAF6EE" strokeWidth="2" strokeLinecap="round"/>
+      <circle cx="100" cy="60" r="4" fill="#C4714F"/>
+    </g>
+    <rect x="88" y="62" width="24" height="6" rx="3" fill="#C4714F" opacity="0.7"/>
+    <circle cx="95" cy="104" r="3" fill="#C4714F" opacity="0.6"/>
+    <circle cx="100" cy="104" r="3" fill="#8FA67A" opacity="0.6"/>
+    <circle cx="105" cy="104" r="3" fill="#C4714F" opacity="0.6"/>
+  </svg>
+);
+
+/* ── Voucher Border SVG ── */
+const VoucherBorder = () => (
+  <svg viewBox="0 0 400 240" fill="none" xmlns="http://www.w3.org/2000/svg"
+    style={{position:'absolute', inset:0, width:'100%', height:'100%', pointerEvents:'none'}}>
+    <rect x="6" y="6" width="388" height="228" rx="16" stroke="#C4714F" strokeWidth="1.5" strokeDasharray="6 4" opacity="0.5"/>
+    {/* Corner botanicals */}
+    <g opacity="0.5">
+      <path d="M20 20 C20 20 30 35 45 30 C55 26 58 18 20 20" fill="#8FA67A"/>
+      <path d="M20 20 C20 20 15 38 28 46 C38 52 48 44 20 20" fill="#8FA67A"/>
+      <circle cx="48" cy="22" r="2.5" fill="#C4714F"/>
+      <circle cx="22" cy="48" r="2" fill="#C4714F"/>
+    </g>
+    <g opacity="0.5" transform="translate(400,0) scale(-1,1)">
+      <path d="M20 20 C20 20 30 35 45 30 C55 26 58 18 20 20" fill="#C4714F"/>
+      <path d="M20 20 C20 20 15 38 28 46 C38 52 48 44 20 20" fill="#C4714F"/>
+    </g>
+    <g opacity="0.5" transform="translate(0,240) scale(1,-1)">
+      <path d="M20 20 C20 20 30 35 45 30 C55 26 58 18 20 20" fill="#C4714F"/>
+      <path d="M20 20 C20 20 15 38 28 46 C38 52 48 44 20 20" fill="#C4714F"/>
+    </g>
+    <g opacity="0.5" transform="translate(400,240) scale(-1,-1)">
+      <path d="M20 20 C20 20 30 35 45 30 C55 26 58 18 20 20" fill="#8FA67A"/>
+      <path d="M20 20 C20 20 15 38 28 46 C38 52 48 44 20 20" fill="#8FA67A"/>
+    </g>
+  </svg>
+);
+
+/* ── Stamp SVG ── */
+const Stamp = () => (
+  <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:64, opacity:0.85}}>
+    <circle cx="40" cy="40" r="36" stroke="#C4714F" strokeWidth="3"/>
+    <circle cx="40" cy="40" r="30" stroke="#C4714F" strokeWidth="1"/>
+    <text x="40" y="35" textAnchor="middle" fontSize="8" fill="#C4714F" fontFamily="DM Sans" fontWeight="700" letterSpacing="2">BERLIN</text>
+    <text x="40" y="47" textAnchor="middle" fontSize="14" fill="#C4714F">🎁</text>
+    <text x="40" y="57" textAnchor="middle" fontSize="7" fill="#C4714F" fontFamily="DM Sans" fontWeight="600" letterSpacing="1">2025</text>
+  </svg>
+);
+
+/* ── Envelope SVG ── */
+function EnvelopeSVG({ opening }) {
+  return (
+    <svg viewBox="0 0 320 220" fill="none" xmlns="http://www.w3.org/2000/svg"
+      style={{ width: '100%', maxWidth: 320, filter: 'drop-shadow(0 12px 32px rgba(59,42,26,0.18))' }}>
+      {/* Body */}
+      <rect x="4" y="60" width="312" height="156" rx="14" fill="#FAF6EE"/>
+      <rect x="4" y="60" width="312" height="156" rx="14" stroke="#C4714F" strokeWidth="2"/>
+      {/* Bottom fold lines */}
+      <path d="M4 216 L160 138 L316 216" stroke="#E8D5B8" strokeWidth="1.5"/>
+      {/* Side folds */}
+      <path d="M4 60 L160 138 L316 60" stroke="#E8D5B8" strokeWidth="1.5"/>
+      {/* Wax seal */}
+      <circle cx="160" cy="138" r="18" fill="#C4714F"/>
+      <circle cx="160" cy="138" r="13" fill="#D4956B"/>
+      <text x="160" y="143" textAnchor="middle" fontSize="14" fill="#FAF6EE">🌿</text>
+      {/* Flap */}
+      <g style={{
+        transformOrigin: '160px 60px',
+        transform: opening ? 'rotateX(-180deg)' : 'rotateX(0deg)',
+        transition: 'transform 0.7s cubic-bezier(0.4,0,0.2,1)',
+      }}>
+        <path d="M4 60 L160 148 L316 60 L300 4 Q160 38 20 4 Z" fill="#C4714F"/>
+        <path d="M4 60 L160 148 L316 60 L300 4 Q160 38 20 4 Z" stroke="#A85B38" strokeWidth="1.5"/>
+        <path d="M70 30 C90 20 120 16 160 20 C200 16 230 20 250 30" stroke="#FAF6EE" strokeWidth="1.2" strokeOpacity="0.4"/>
+      </g>
+      {/* Botanical on envelope */}
+      <g opacity="0.3">
+        <path d="M40 180 C40 180 52 165 65 168 C74 170 75 180 40 180" fill="#8FA67A"/>
+        <path d="M40 180 C40 180 38 165 50 158 C60 152 70 158 40 180" fill="#8FA67A"/>
+      </g>
+      <g opacity="0.3" transform="translate(320,220) scale(-1,-1)">
+        <path d="M40 180 C40 180 52 165 65 168 C74 170 75 180 40 180" fill="#C4714F"/>
+        <path d="M40 180 C40 180 38 165 50 158 C60 152 70 158 40 180" fill="#C4714F"/>
+      </g>
+    </svg>
+  );
+}
+
+/* ══════════════════════════════════════════
+   SCREEN 1 — The Envelope
+══════════════════════════════════════════ */
+function Screen1({ onOpen }) {
+  const [opening, setOpening] = useState(false);
+
+  const handleClick = () => {
+    setOpening(true);
+    setTimeout(onOpen, 900);
+  };
+
+  return (
+    <div className="screen-enter" style={{
+      minHeight:'100vh', display:'flex', flexDirection:'column',
+      alignItems:'center', justifyContent:'center',
+      background:'linear-gradient(160deg, #F5ECD7 0%, #EDD9B8 60%, #E8CCB0 100%)',
+      padding: '2rem', textAlign:'center', position:'relative', overflow:'hidden',
+    }}>
+      {/* Corner botanicals */}
+      <div style={{position:'absolute', bottom:20, left:0}}><BotanicalLeft/></div>
+      <div style={{position:'absolute', bottom:20, right:0}}><BotanicalRight/></div>
+
+      <p style={{
+        fontFamily:"'DM Sans', sans-serif", fontSize:'0.9rem', letterSpacing:'0.12em',
+        textTransform:'uppercase', color:'#8FA67A', fontWeight:600, marginBottom:'2rem',
+        opacity: opening ? 0 : 1, transition:'opacity 0.4s',
+      }}>
+        Psst, Derek…
+      </p>
+
+      <div className={opening ? '' : 'envelope-breathe'} style={{marginBottom:'2rem'}}>
+        <EnvelopeSVG opening={opening}/>
+      </div>
+
+      <p style={{
+        fontFamily:"'Playfair Display', serif", fontSize:'1.4rem',
+        color:'#3B2A1A', marginBottom:'0.5rem', fontStyle:'italic',
+        opacity: opening ? 0 : 1, transition:'opacity 0.4s',
+      }}>
+        something's waiting for you 👇
+      </p>
+
+      <button
+        onClick={handleClick}
+        style={{
+          marginTop:'1.5rem',
+          background: opening ? '#D4956B' : '#C4714F',
+          color:'#FAF6EE', border:'none', borderRadius:'50px',
+          padding:'0.85rem 2.2rem', fontFamily:"'DM Sans', sans-serif",
+          fontSize:'1rem', fontWeight:600, cursor:'pointer',
+          boxShadow:'0 6px 24px rgba(196,113,79,0.35)',
+          transition:'all 0.3s', letterSpacing:'0.04em',
+          opacity: opening ? 0 : 1,
+        }}
+      >
+        Open your gift ✉️
+      </button>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════
+   SCREEN 2 — The Reveal
+══════════════════════════════════════════ */
+function Screen2({ onNext }) {
+  const [confetti, setConfetti] = useState(false);
+
+  useEffect(() => {
+    setConfetti(true);
+    const t = setTimeout(() => setConfetti(false), 4500);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <div className="screen-enter" style={{
+      minHeight:'100vh', display:'flex', flexDirection:'column',
+      alignItems:'center', justifyContent:'center',
+      background:'linear-gradient(160deg, #F5ECD7 0%, #EDD9B8 60%, #E8CCB0 100%)',
+      padding:'2rem', textAlign:'center', position:'relative', overflow:'hidden',
+    }}>
+      <Confetti active={confetti}/>
+      <div style={{position:'absolute', bottom:20, left:0}}><BotanicalLeft/></div>
+      <div style={{position:'absolute', bottom:20, right:0}}><BotanicalRight/></div>
+
+      <h1 style={{
+        fontFamily:"'Playfair Display', serif", fontSize:'clamp(2rem, 6vw, 3rem)',
+        color:'#3B2A1A', marginBottom:'0.5rem', lineHeight:1.2,
+      }}>
+        Happy Birthday, Derek! 🎉
+      </h1>
+
+      <p style={{
+        fontFamily:"'Playfair Display', serif", fontStyle:'italic',
+        fontSize:'clamp(0.95rem, 2.5vw, 1.15rem)', color:'#C4714F',
+        maxWidth:440, lineHeight:1.6, marginBottom:'2.5rem',
+      }}>
+        A little something to protect what matters most — your ears.
+      </p>
+
+      <EarPlugIcon/>
+
+      {/* Postcard */}
+      <div style={{
+        marginTop:'2.5rem', maxWidth:460, width:'100%',
+        background:'#FAF6EE',
+        borderRadius:'1.5rem',
+        padding:'1.75rem 2rem',
+        boxShadow:'0 8px 40px rgba(59,42,26,0.12)',
+        border:'1px solid rgba(196,113,79,0.2)',
+        position:'relative', overflow:'hidden',
+      }}>
+        <div style={{
+          position:'absolute', top:0, left:0, right:0, height:6,
+          background:'repeating-linear-gradient(90deg, #C4714F 0px, #C4714F 20px, #8FA67A 20px, #8FA67A 40px)',
+        }}/>
+        <p style={{
+          fontFamily:"'DM Sans', sans-serif", fontSize:'0.98rem',
+          color:'#3B2A1A', lineHeight:1.75, marginTop:'0.5rem',
+        }}>
+          You love music. You love parties. But those speakers don't love your ears back.
+          So I'm gifting you a pair of proper, high-fidelity ear plugs — the kind that let
+          you enjoy every beat without the ringing after. Pick them up when you're in Berlin. 🇩🇪
+        </p>
+      </div>
+
+      <button
+        onClick={onNext}
+        style={{
+          marginTop:'2rem',
+          background:'#C4714F', color:'#FAF6EE', border:'none', borderRadius:'50px',
+          padding:'0.85rem 2.2rem', fontFamily:"'DM Sans', sans-serif",
+          fontSize:'1rem', fontWeight:600, cursor:'pointer',
+          boxShadow:'0 6px 24px rgba(196,113,79,0.35)', letterSpacing:'0.04em',
+          transition:'all 0.2s',
+        }}
+        onMouseEnter={e => e.currentTarget.style.transform='translateY(-2px)'}
+        onMouseLeave={e => e.currentTarget.style.transform='translateY(0)'}
+      >
+        Show me my voucher →
+      </button>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════
+   SCREEN 3 — The Voucher
+══════════════════════════════════════════ */
+function Screen3({ onBonus }) {
+  return (
+    <div className="screen-enter" style={{
+      minHeight:'100vh', display:'flex', flexDirection:'column',
+      alignItems:'center', justifyContent:'center',
+      background:'linear-gradient(160deg, #F5ECD7 0%, #EDD9B8 60%, #E8CCB0 100%)',
+      padding:'2rem', textAlign:'center', position:'relative', overflow:'hidden',
+    }}>
+      <div style={{position:'absolute', bottom:20, left:0}}><BotanicalLeft/></div>
+      <div style={{position:'absolute', bottom:20, right:0}}><BotanicalRight/></div>
+
+      <p style={{
+        fontFamily:"'DM Sans', sans-serif", fontSize:'0.8rem', letterSpacing:'0.14em',
+        textTransform:'uppercase', color:'#8FA67A', fontWeight:600, marginBottom:'1.5rem',
+      }}>
+        Your Voucher
+      </p>
+
+      {/* Voucher Card */}
+      <div className="shimmer-card" style={{
+        position:'relative', maxWidth:480, width:'100%',
+        borderRadius:'1.5rem',
+        boxShadow:'0 12px 48px rgba(59,42,26,0.18)',
+        padding:'2.5rem 2rem',
+        overflow:'hidden',
+      }}>
+        <VoucherBorder/>
+
+        {/* Stamp in top-right */}
+        <div style={{position:'absolute', top:16, right:16}}>
+          <Stamp/>
+        </div>
+
+        <div style={{position:'relative', zIndex:2}}>
+          <h2 style={{
+            fontFamily:"'Playfair Display', serif",
+            fontSize:'clamp(1.4rem, 4vw, 1.8rem)',
+            color:'#3B2A1A', marginBottom:'1.5rem',
+          }}>
+            🎁 Gift Voucher
+          </h2>
+
+          <div style={{
+            display:'flex', flexDirection:'column', gap:'0.9rem',
+            textAlign:'left', marginBottom:'1.5rem',
+          }}>
+            <Row label="For" value="Derek" />
+            <div style={{height:1, background:'rgba(196,113,79,0.2)'}}/>
+            <Row label="Gift" value="1× Premium Ear Plugs — Party Edition" bold/>
+            <p style={{
+              fontFamily:"'DM Sans', sans-serif", fontSize:'0.82rem',
+              color:'#7A5840', lineHeight:1.5, paddingLeft:'0.25rem',
+              fontStyle:'italic',
+            }}>
+              High-fidelity hearing protection for the music lover who refuses to compromise on sound quality
+            </p>
+            <div style={{height:1, background:'rgba(196,113,79,0.2)'}}/>
+            <Row label="📍 Redeem" value="Berlin — on your next visit"/>
+            <Row label="✅ Valid" value="Forever (because good friendships don't expire)"/>
+          </div>
+
+          {/* Voucher Code */}
+          <div style={{
+            background:'rgba(59,42,26,0.07)', borderRadius:'50px',
+            padding:'0.7rem 1.2rem', display:'inline-block',
+            border:'1.5px dashed rgba(196,113,79,0.5)',
+          }}>
+            <span style={{
+              fontFamily:"'DM Mono', monospace", fontSize:'1.05rem',
+              color:'#3B2A1A', fontWeight:500, letterSpacing:'0.06em',
+            }}>
+              DEREK-BDAY-BLN-2025
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <p style={{
+        marginTop:'1.2rem', fontFamily:"'DM Sans', sans-serif",
+        fontSize:'0.82rem', color:'#A07858', letterSpacing:'0.03em',
+      }}>
+        📸 Save as screenshot to keep your voucher
+      </p>
+
+      <button
+        onClick={onBonus}
+        style={{
+          marginTop:'1.25rem',
+          background:'transparent', color:'#C4714F',
+          border:'2px solid #C4714F', borderRadius:'50px',
+          padding:'0.75rem 1.8rem', fontFamily:"'DM Sans', sans-serif",
+          fontSize:'0.95rem', fontWeight:600, cursor:'pointer',
+          letterSpacing:'0.04em', transition:'all 0.2s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background='#C4714F'; e.currentTarget.style.color='#FAF6EE'; }}
+        onMouseLeave={e => { e.currentTarget.style.background='transparent'; e.currentTarget.style.color='#C4714F'; }}
+      >
+        🎵 Play a little birthday tune
+      </button>
+    </div>
+  );
+}
+
+function Row({ label, value, bold }) {
+  return (
+    <div style={{ display:'flex', flexWrap:'wrap', gap:'0.3rem', alignItems:'baseline' }}>
+      <span style={{
+        fontFamily:"'DM Sans', sans-serif", fontSize:'0.75rem', fontWeight:600,
+        textTransform:'uppercase', letterSpacing:'0.1em', color:'#8FA67A',
+        minWidth:60,
+      }}>{label}</span>
+      <span style={{
+        fontFamily:"'DM Sans', sans-serif", fontSize:'0.92rem', color:'#3B2A1A',
+        fontWeight: bold ? 600 : 400,
+      }}>{value}</span>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════
+   SCREEN 4 — Bonus Modal
+══════════════════════════════════════════ */
+function Screen4({ onClose }) {
+  return (
+    <div style={{
+      position:'fixed', inset:0, zIndex:100,
+      background:'rgba(59,42,26,0.45)',
+      display:'flex', alignItems:'flex-end', justifyContent:'center',
+    }}
+    onClick={e => { if(e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="modal-enter" style={{
+        background:'linear-gradient(160deg, #FAF6EE 0%, #F0E6D0 100%)',
+        borderRadius:'2rem 2rem 0 0', padding:'2.5rem 2rem 3rem',
+        width:'100%', maxWidth:520, textAlign:'center',
+        boxShadow:'0 -8px 48px rgba(59,42,26,0.18)',
+        position:'relative',
+      }}>
+        {/* Handle bar */}
+        <div style={{
+          width:40, height:4, background:'rgba(59,42,26,0.2)',
+          borderRadius:4, margin:'0 auto 1.5rem',
+        }}/>
+
+        <DJDeck/>
+
+        <h3 style={{
+          fontFamily:"'Playfair Display', serif", fontSize:'1.3rem',
+          color:'#3B2A1A', margin:'1.25rem 0 0.5rem',
+        }}>
+          No music here (your ears are safe 😄)
+        </h3>
+        <p style={{
+          fontFamily:"'DM Sans', sans-serif", fontSize:'0.9rem',
+          color:'#7A5840', marginBottom:'1.5rem',
+        }}>
+          but here's a little note:
+        </p>
+
+        <blockquote style={{
+          fontFamily:"'Playfair Display', serif", fontStyle:'italic',
+          fontSize:'clamp(0.95rem, 2.5vw, 1.1rem)',
+          color:'#3B2A1A', lineHeight:1.7, maxWidth:380, margin:'0 auto 2rem',
+          borderLeft:'3px solid #C4714F', paddingLeft:'1.2rem', textAlign:'left',
+        }}>
+          "The best parties are the ones you remember. Protect the vibes. See you in Berlin. 🌍"
+        </blockquote>
+
+        <button
+          onClick={onClose}
+          style={{
+            background:'#C4714F', color:'#FAF6EE', border:'none', borderRadius:'50px',
+            padding:'0.8rem 2rem', fontFamily:"'DM Sans', sans-serif",
+            fontSize:'0.95rem', fontWeight:600, cursor:'pointer',
+            boxShadow:'0 4px 16px rgba(196,113,79,0.3)', letterSpacing:'0.04em',
+          }}
+        >
+          Back to my voucher ↩
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════
+   APP ROOT
+══════════════════════════════════════════ */
+function App() {
+  const [screen, setScreen] = useState(1);
+  const [showModal, setShowModal] = useState(false);
+  const [key, setKey] = useState(0);
+
+  const goTo = (n) => {
+    setKey(k => k + 1);
+    setScreen(n);
+  };
+
+  return (
+    <div style={{ position:'relative' }}>
+      <div className="grain-overlay"/>
+      {screen === 1 && <Screen1 key={`s1-${key}`} onOpen={() => goTo(2)}/>}
+      {screen === 2 && <Screen2 key={`s2-${key}`} onNext={() => goTo(3)}/>}
+      {screen === 3 && <Screen3 key={`s3-${key}`} onBonus={() => setShowModal(true)}/>}
+      {showModal && <Screen4 onClose={() => setShowModal(false)}/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
