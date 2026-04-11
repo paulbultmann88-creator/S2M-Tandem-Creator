@@ -609,12 +609,158 @@ function Screen4({ onClose }) {
 }
 
 /* ══════════════════════════════════════════
+   MUSIC — Web Audio API synthesizer
+   Happy Bossa-inspired melody in C major
+══════════════════════════════════════════ */
+function useBirthdayMusic() {
+  const ctxRef   = useRef(null);
+  const mgRef    = useRef(null);
+  const schedRef = useRef(0);
+  const timerRef = useRef(null);
+  const startedRef = useRef(false);
+  const mutedRef = useRef(false);
+  const [muted, setMuted] = useState(false);
+
+  const BPM = 116;
+  const B   = 60 / BPM; // seconds per beat
+
+  // 24-beat looping melody  [freq_hz, beats]  (0 = rest)
+  const MELODY = [
+    // Phrase A  (6 beats)
+    [392,0.5],[440,0.5],[523,1],[659,1],[587,0.5],[523,0.5],[0,2],
+    // Phrase B  (6 beats) — ascending run
+    [523,0.5],[587,0.5],[659,0.5],[784,0.5],[880,1],[784,0.5],[659,0.5],[0,2],
+    // Phrase C  (6 beats) — descending resolution
+    [659,1],[587,0.5],[523,0.5],[440,1],[392,1],[0,2],
+    // Phrase D  (6 beats) — joyful climb & land
+    [392,0.5],[523,0.5],[659,0.5],[784,0.5],[880,0.5],[784,0.5],[659,1],[0,1.5],[523,0.5],
+  ];
+
+  // Bass: I–I–vi–I–V–I  (also 24 beats)
+  const BASS = [
+    [130.81,6],[130.81,6],   // C–C
+    [110.00,3],[130.81,3],   // Am–C
+    [98.00,3], [130.81,3],   // G–C
+  ];
+
+  const LOOP = 24 * B;
+
+  const playNote = (freq, t, dur, vol, type = 'sine') => {
+    const ctx = ctxRef.current;
+    if (!ctx || freq === 0) return;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = type;
+    o.frequency.value = freq;
+    const atk = Math.min(0.04, dur * B * 0.1);
+    const rel = Math.min(0.08, dur * B * 0.15);
+    g.gain.setValueAtTime(0.001, t);
+    g.gain.linearRampToValueAtTime(vol, t + atk);
+    g.gain.setValueAtTime(vol * 0.78, t + dur * B - rel);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur * B);
+    o.connect(g);
+    g.connect(mgRef.current);
+    o.start(t);
+    o.stop(t + dur * B + 0.01);
+  };
+
+  const scheduleLoop = (st) => {
+    let t = st;
+    MELODY.forEach(([f, d]) => { playNote(f, t, d, 0.28); t += d * B; });
+    let bt = st;
+    BASS.forEach(([f, d]) => { playNote(f, bt, d, 0.13, 'triangle'); bt += d * B; });
+  };
+
+  const pump = () => {
+    const ctx = ctxRef.current;
+    if (!ctx) return;
+    while (schedRef.current < ctx.currentTime + 2.5) {
+      scheduleLoop(schedRef.current);
+      schedRef.current += LOOP;
+    }
+    timerRef.current = setTimeout(pump, 400);
+  };
+
+  const startMusic = () => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    ctxRef.current = ctx;
+    const mg = ctx.createGain();
+    mg.gain.value = mutedRef.current ? 0 : 1;
+    mg.connect(ctx.destination);
+    mgRef.current = mg;
+    schedRef.current = ctx.currentTime + 0.1;
+    pump();
+  };
+
+  useEffect(() => {
+    // Attempt instant autoplay; fall back to first user click
+    const onFirst = () => startMusic();
+    try {
+      const probe = new (window.AudioContext || window.webkitAudioContext)();
+      if (probe.state === 'running') { probe.close(); setTimeout(startMusic, 150); }
+      else { probe.close(); document.addEventListener('click', onFirst, { once: true }); }
+    } catch(e) {
+      document.addEventListener('click', onFirst, { once: true });
+    }
+    return () => {
+      document.removeEventListener('click', onFirst);
+      clearTimeout(timerRef.current);
+      ctxRef.current?.close();
+    };
+  }, []);
+
+  const toggleMute = () => {
+    const nm = !mutedRef.current;
+    mutedRef.current = nm;
+    setMuted(nm);
+    if (mgRef.current && ctxRef.current) {
+      mgRef.current.gain.setTargetAtTime(nm ? 0 : 1, ctxRef.current.currentTime, 0.15);
+    }
+    if (!startedRef.current) startMusic();
+  };
+
+  return { startMusic, toggleMute, muted };
+}
+
+/* ── Mute button (fixed, bottom-right, all screens) ── */
+function MuteButton({ muted, onToggle }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      onClick={onToggle}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      title={muted ? 'Musik an' : 'Musik aus'}
+      style={{
+        position:'fixed', bottom:20, right:20, zIndex:9999,
+        width:50, height:50, borderRadius:'50%',
+        background: muted
+          ? 'rgba(59,42,26,0.80)'
+          : hover ? '#A85B38' : 'rgba(196,113,79,0.92)',
+        border:'2px solid rgba(255,246,238,0.35)',
+        color:'#FAF6EE', fontSize:'1.35rem',
+        display:'flex', alignItems:'center', justifyContent:'center',
+        cursor:'pointer', backdropFilter:'blur(10px)',
+        boxShadow:'0 4px 20px rgba(0,0,0,0.22)',
+        transition:'background 0.2s, transform 0.15s',
+        transform: hover ? 'scale(1.1)' : 'scale(1)',
+      }}
+    >
+      {muted ? '🔇' : '🔊'}
+    </button>
+  );
+}
+
+/* ══════════════════════════════════════════
    APP ROOT
 ══════════════════════════════════════════ */
 function App() {
   const [screen, setScreen] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [key, setKey] = useState(0);
+  const { startMusic, toggleMute, muted } = useBirthdayMusic();
 
   const goTo = (n) => {
     setKey(k => k + 1);
@@ -624,10 +770,11 @@ function App() {
   return (
     <div style={{ position:'relative' }}>
       <div className="grain-overlay"/>
-      {screen === 1 && <Screen1 key={`s1-${key}`} onOpen={() => goTo(2)}/>}
+      {screen === 1 && <Screen1 key={`s1-${key}`} onOpen={() => { startMusic(); goTo(2); }}/>}
       {screen === 2 && <Screen2 key={`s2-${key}`} onNext={() => goTo(3)}/>}
       {screen === 3 && <Screen3 key={`s3-${key}`} onBonus={() => setShowModal(true)}/>}
       {showModal && <Screen4 onClose={() => setShowModal(false)}/>}
+      <MuteButton muted={muted} onToggle={toggleMute}/>
     </div>
   );
 }
