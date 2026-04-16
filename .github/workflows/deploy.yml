@@ -24,7 +24,18 @@ jobs:
           cache: npm
           cache-dependency-path: chess-app/package-lock.json
 
-      - name: Install dependencies
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install edge-tts
+        run: pip install edge-tts
+
+      - name: Generate German audio files (Microsoft KatjaNeural)
+        run: python chess-app/scripts/generate_audio.py
+
+      - name: Install Node dependencies
         working-directory: chess-app
         run: npm ci
 

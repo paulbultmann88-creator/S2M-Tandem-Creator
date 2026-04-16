@@ -1,132 +1,176 @@
 /**
  * Speech Engine für Einhorn Schach
  *
- * iOS-Probleme die wir lösen:
- * 1. Audio braucht einen User-Gesture zum Starten → SpeechEngine.unlock() beim ersten Tap
- * 2. Stimmenladung ist asynchron → onvoiceschanged event
- * 3. Sätze brechen ab → Queue-System mit Prioritäten
- * 4. iOS Safari pausiert speechSynthesis im Hintergrund → visibilitychange guard
+ * Strategie:
+ * 1. Versuche pre-generierte MP3 (Microsoft KatjaNeural – sehr natürlich)
+ * 2. Fallback auf Web Speech API falls MP3 nicht vorhanden
+ *
+ * iOS-Fix: unlock() muss beim ersten Nutzer-Tap aufgerufen werden.
  */
 
 export type SpeechPriority = 'normal' | 'high'
 
+// ── Text → Dateiname (identisch mit generate_audio.py) ────────────────────
+function textToSlug(text: string): string {
+  const umlauts: [string, string][] = [
+    ['ä','ae'],['ö','oe'],['ü','ue'],['ß','ss'],
+    ['Ä','ae'],['Ö','oe'],['Ü','ue'],
+  ]
+  let s = text
+  for (const [from, to] of umlauts) s = s.replaceAll(from, to)
+  return s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .substring(0, 60)
+}
+
+// Vite stellt BASE_URL bereit (/  lokal, /S2M-Tandem-Creator/ auf GitHub Pages)
+const BASE = import.meta.env.BASE_URL
+
+// ── Interne Queue-Einträge ─────────────────────────────────────────────────
+interface Entry {
+  text: string
+  priority: SpeechPriority
+}
+
 class SpeechEngine {
-  private queue: Array<{ text: string; priority: SpeechPriority }> = []
-  private isSpeaking = false
-  private voice: SpeechSynthesisVoice | null = null
+  private queue: Entry[] = []
+  private busy = false
+  private currentAudio: HTMLAudioElement | null = null
   private unlocked = false
 
+  // Web-Speech-Fallback-Infrastruktur
+  private wsVoice: SpeechSynthesisVoice | null = null
+
   constructor() {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      this.loadVoices()
-      window.speechSynthesis.onvoiceschanged = () => this.loadVoices()
-      // iOS pausiert TTS wenn Tab im Hintergrund
+    if ('speechSynthesis' in window) {
+      this.loadWSVoice()
+      window.speechSynthesis.onvoiceschanged = () => this.loadWSVoice()
       document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-          window.speechSynthesis.pause()
-        } else {
-          window.speechSynthesis.resume()
-        }
+        if (document.hidden) window.speechSynthesis.pause()
+        else window.speechSynthesis.resume()
       })
     }
   }
 
-  private loadVoices() {
+  private loadWSVoice() {
     const voices = window.speechSynthesis.getVoices()
-    if (voices.length === 0) return
-
-    // Präferenz-Reihenfolge: Apple Anna (iOS), Google Deutsch, dann jede DE-Stimme
     const preferred = ['Anna', 'Helena', 'Petra', 'Google Deutsch', 'Microsoft Katja']
     for (const name of preferred) {
-      const found = voices.find(v => v.name.includes(name))
-      if (found) {
-        this.voice = found
-        return
-      }
+      const v = voices.find(v => v.name.includes(name))
+      if (v) { this.wsVoice = v; return }
     }
-    // Fallback: irgendeine deutsche Stimme
-    this.voice = voices.find(v => v.lang.startsWith('de')) ?? voices[0] ?? null
+    this.wsVoice = voices.find(v => v.lang.startsWith('de')) ?? null
   }
 
-  /** Muss beim ersten Nutzer-Tap aufgerufen werden (iOS-Anforderung) */
+  /** Beim ersten Tap aufrufen – entsperrt Audio auf iOS */
   unlock() {
     if (this.unlocked) return
     this.unlocked = true
-    // Leiser Test-Utterance um Audio-Kontext zu öffnen
-    const u = new SpeechSynthesisUtterance(' ')
-    u.volume = 0
-    window.speechSynthesis.speak(u)
+    if ('speechSynthesis' in window) {
+      const u = new SpeechSynthesisUtterance(' ')
+      u.volume = 0
+      window.speechSynthesis.speak(u)
+    }
+    // Leiser Audio-Ping um iOS Audio-Kontext zu aktivieren
+    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+    const buf = ctx.createBuffer(1, 1, 22050)
+    const src = ctx.createBufferSource()
+    src.buffer = buf
+    src.connect(ctx.destination)
+    src.start(0)
   }
 
   speak(text: string, priority: SpeechPriority = 'normal') {
-    if (!('speechSynthesis' in window)) return
-
     if (priority === 'high') {
-      // Alles abbrechen und sofort sprechen
-      window.speechSynthesis.cancel()
-      this.queue = []
-      this.isSpeaking = false
+      this.stop()
     }
-
     this.queue.push({ text, priority })
-    if (!this.isSpeaking) {
-      this.processQueue()
-    }
+    if (!this.busy) this.processQueue()
   }
 
   stop() {
-    window.speechSynthesis.cancel()
+    if (this.currentAudio) {
+      this.currentAudio.pause()
+      this.currentAudio.src = ''
+      this.currentAudio = null
+    }
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel()
     this.queue = []
-    this.isSpeaking = false
+    this.busy = false
   }
 
-  private processQueue() {
+  private async processQueue() {
     if (this.queue.length === 0) {
-      this.isSpeaking = false
+      this.busy = false
       return
     }
-
-    this.isSpeaking = true
+    this.busy = true
     const { text } = this.queue.shift()!
 
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang = 'de-DE'
-    utterance.rate = 0.88   // etwas langsamer für Kinder
-    utterance.pitch = 1.15  // etwas höher, freundlicher
-    utterance.volume = 1.0
-
-    if (this.voice) {
-      utterance.voice = this.voice
+    const played = await this.tryMP3(text)
+    if (!played) {
+      await this.speakWS(text)
     }
 
-    // iOS Workaround: speechSynthesis hängt manchmal → Timeout als Sicherheitsnetz
-    let finished = false
-    const safetyTimer = setTimeout(() => {
-      if (!finished) {
-        finished = true
-        this.isSpeaking = false
-        this.processQueue()
-      }
-    }, text.length * 120 + 2000)
+    this.processQueue()
+  }
 
-    utterance.onend = () => {
-      if (!finished) {
-        finished = true
-        clearTimeout(safetyTimer)
-        this.processQueue()
-      }
-    }
-    utterance.onerror = () => {
-      if (!finished) {
-        finished = true
-        clearTimeout(safetyTimer)
-        this.processQueue()
-      }
-    }
+  /** Versucht die pre-generierte MP3 abzuspielen. Gibt true zurück wenn erfolgreich. */
+  private tryMP3(text: string): Promise<boolean> {
+    return new Promise(resolve => {
+      const slug = textToSlug(text)
+      const url = `${BASE}audio/${slug}.mp3`
+      const audio = new Audio(url)
+      this.currentAudio = audio
 
-    window.speechSynthesis.speak(utterance)
+      let done = false
+      const finish = (success: boolean) => {
+        if (done) return
+        done = true
+        this.currentAudio = null
+        resolve(success)
+      }
+
+      // Sicherheitsnetz: maximal Text-Länge × 150ms + 3s warten
+      const timeout = setTimeout(
+        () => finish(false),
+        text.length * 150 + 3000
+      )
+
+      audio.onended = () => { clearTimeout(timeout); finish(true) }
+      audio.onerror = () => { clearTimeout(timeout); finish(false) }
+
+      audio.play().catch(() => { clearTimeout(timeout); finish(false) })
+    })
+  }
+
+  /** Web Speech API Fallback */
+  private speakWS(text: string): Promise<void> {
+    return new Promise(resolve => {
+      if (!('speechSynthesis' in window)) { resolve(); return }
+
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.lang    = 'de-DE'
+      utterance.rate    = 0.88
+      utterance.pitch   = 1.15
+      utterance.volume  = 1.0
+      if (this.wsVoice) utterance.voice = this.wsVoice
+
+      let done = false
+      const finish = () => { if (!done) { done = true; resolve() } }
+
+      const safety = setTimeout(finish, text.length * 120 + 2000)
+      utterance.onend   = () => { clearTimeout(safety); finish() }
+      utterance.onerror = () => { clearTimeout(safety); finish() }
+
+      window.speechSynthesis.speak(utterance)
+    })
   }
 }
 
-// Singleton – einmal erzeugen, überall nutzen
 export const speech = new SpeechEngine()
