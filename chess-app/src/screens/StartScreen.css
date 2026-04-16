@@ -1,0 +1,73 @@
+.start-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 24px 16px 32px;
+  min-height: 100dvh;
+  background: linear-gradient(160deg, #FDF4FF 0%, #EDE9FE 100%);
+}
+
+.start-screen__header {
+  text-align: center;
+}
+
+.start-screen__title {
+  font-size: clamp(28px, 7vw, 40px);
+  color: #4C1D95;
+  margin: 0;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+}
+
+.start-screen__subtitle {
+  font-size: clamp(16px, 4vw, 20px);
+  color: #7C3AED;
+  margin: 4px 0 0;
+  font-weight: 600;
+}
+
+.start-screen__unicorn {
+  display: flex;
+  justify-content: center;
+}
+
+/* ── Menü-Buttons ── */
+.start-screen__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 340px;
+}
+
+.menu-btn {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 28px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  font-size: clamp(20px, 5vw, 26px);
+  font-weight: 800;
+  color: white;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  transition: transform 0.1s, box-shadow 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  width: 100%;
+  text-align: left;
+}
+
+.menu-btn:active {
+  transform: scale(0.96);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+.menu-btn--learn  { background: linear-gradient(135deg, #7C3AED, #A855F7); }
+.menu-btn--puzzle { background: linear-gradient(135deg, #EC4899, #F472B6); }
+.menu-btn--play   { background: linear-gradient(135deg, #059669, #34D399); }
+
+.menu-btn__icon  { font-size: clamp(28px, 7vw, 36px); line-height: 1; }
+.menu-btn__label { font-size: clamp(20px, 5vw, 26px); }

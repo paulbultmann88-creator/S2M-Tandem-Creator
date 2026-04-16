@@ -1,0 +1,46 @@
+.unicorn-wrapper {
+  position: relative;
+  display: inline-block;
+  transform-origin: center bottom;
+}
+
+/* Sanftes Wippen */
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+
+/* Nachdenken: leichtes Schaukeln */
+@keyframes think {
+  0%, 100% { transform: rotate(0deg); }
+  25%       { transform: rotate(-4deg); }
+  75%       { transform: rotate(4deg); }
+}
+
+/* Aufgeregt: Hüpfen */
+@keyframes excited {
+  0%, 100% { transform: translateY(0) scale(1); }
+  30%       { transform: translateY(-14px) scale(1.05); }
+  60%       { transform: translateY(-6px) scale(0.98); }
+}
+
+.unicorn--bounce   { animation: bounce  2.4s ease-in-out infinite; }
+.unicorn--thinking { animation: think   1.8s ease-in-out infinite; }
+.unicorn--excited  { animation: excited 0.6s ease-in-out 3; }
+
+/* Glitzer */
+.unicorn-glitter {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  font-size: 20px;
+  animation: glitter-fade 1.5s ease-out forwards;
+}
+
+@keyframes glitter-fade {
+  0%   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-30px); }
+}
