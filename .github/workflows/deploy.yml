@@ -1,0 +1,52 @@
+name: Deploy Einhorn Schach to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - claude/chess-learning-app-Cxka6
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: chess-app/package-lock.json
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install edge-tts
+        run: pip install edge-tts
+
+      - name: Generate German audio files (Microsoft KatjaNeural)
+        run: python chess-app/scripts/generate_audio.py
+
+      - name: Install Node dependencies
+        working-directory: chess-app
+        run: npm ci
+
+      - name: Build
+        working-directory: chess-app
+        run: npm run build
+        env:
+          GITHUB_ACTIONS: true
+
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./chess-app/dist
