@@ -6,7 +6,7 @@ from linkedin_bot.post_generator import generate_linkedin_post
 from linkedin_bot.image_generator import generate_and_save_image
 from linkedin_bot.output_formatter import render_html_output
 
-CHANNEL_ID = "UCDx6L69jmKBJbNu5GnkCilg"  # Christoph Magnussen
+CHANNEL_ID = "UCDx6L69jmKBJbNu5GnkCilg"  # Christoph Magnussen (@blackboat)
 STATE_FILE = "last_seen.json"
 POSTS_DIR = "posts"
 

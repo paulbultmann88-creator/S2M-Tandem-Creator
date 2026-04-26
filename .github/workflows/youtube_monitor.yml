@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: '0 */2 * * *'  # Alle 2 Stunden
   workflow_dispatch:         # Manueller Trigger im GitHub Actions Tab
+  push:
+    branches:
+      - claude/youtube-linkedin-automation-RJXxL
+    paths:
+      - 'linkedin_bot/**'
+      - 'requirements.txt'
 
 permissions:
   contents: write
