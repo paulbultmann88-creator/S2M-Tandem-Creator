@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>AI Daily — Dein KI-Briefing</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<style>
+  *{-webkit-tap-highlight-color:transparent;}
+  body{background:#0a0a0a;font-family:'Source Sans 3',sans-serif;}
+  .serif{font-family:'DM Serif Display',serif;}
+  .hide-scroll::-webkit-scrollbar{display:none;}
+  .hide-scroll{-ms-overflow-style:none;scrollbar-width:none;}
+  @keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+  .skeleton{background:linear-gradient(90deg,#1c1c1e 25%,#2c2c2e 50%,#1c1c1e 75%);background-size:400px 100%;animation:shimmer 1.4s infinite;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  .fade-in{animation:fadeIn .28s ease-out;}
+  @keyframes popIn{0%{transform:scale(0.6);opacity:0}60%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}
+  .pop-in{animation:popIn .22s ease-out forwards;}
+  @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+  .slide-up{animation:slideUp .3s cubic-bezier(.32,.72,0,1);}
+  .line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .line-clamp-3{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+  .glow{box-shadow:0 0 40px rgba(99,102,241,.15);}
+</style>
+<script>
+  tailwind.config={theme:{extend:{colors:{brand:'#6366f1',surface:'#111111',card:'#1c1c1e',border:'rgba(255,255,255,0.08)'}}}}
+</script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect,useRef,useCallback}=React;
+
+/* ─── CONFIG ─────────────────────────────────────────────── */
+const PREF_KEY='ai_daily_prefs_v1';
+const KEY_STORE='ai_daily_key_v1';
+
+const SUBTABS=[
+  {id:'top',     label:'🔥 Top'},
+  {id:'tools',   label:'🛠️ Tools'},
+  {id:'startups',label:'🚀 Startups'},
+  {id:'funding', label:'💰 Funding'},
+  {id:'models',  label:'🤖 Models'},
+];
+
+const TAB_PROMPTS={
+  top:'Recherchiere die 5 aktuellsten und wichtigsten KI-Nachrichten von heute: neue Tools, Startups, Modell-Releases, Funding-Runden oder wichtige KI-Ereignisse.',
+  tools:'Recherchiere die 5 neuesten Nachrichten über neue KI-Tools, KI-Apps, Produkt-Launches und Feature-Updates: Cursor, Midjourney, Perplexity, ChatGPT, Claude, Copilot, Notion AI, etc.',
+  startups:'Recherchiere die 5 aktuellsten Nachrichten über KI-Startups: Neugründungen, Produkt-Launches, Team-News und neue interessante KI-Unternehmen.',
+  funding:'Recherchiere die 5 aktuellsten Finanzierungsrunden, Investments, M&A-Deals und Bewertungen im KI-Bereich. Fokus auf konkrete Zahlen und Investoren.',
+  models:'Recherchiere die 5 neuesten Nachrichten über KI-Modelle: neue Releases, Benchmark-Ergebnisse, Model-Updates von OpenAI, Anthropic, Google, Meta, Mistral, xAI.',
+};
+
+/* ─── PREFERENCE ENGINE ──────────────────────────────────── */
+const DEFAULT_PREFS={
+  likedSources:{},dislikedSources:{},
+  likedKeywords:{},dislikedKeywords:{},
+  totalLikes:0,totalDislikes:0,history:[],
+};
+
+const STOPS=new Set(['der','die','das','und','für','mit','von','bei','zum','zur','eine','einen','ein','ist','sind','hat','wird','werden','the','and','for','with','from','that','this','new','its','into','über','nach','auch','sich','auf','wie','als','aber','oder','mehr','noch','jetzt','seit','beim','kann','eine','wird','ihre','ihren','seine','werden']);
+
+function loadPrefs(){
+  try{const r=localStorage.getItem(PREF_KEY);return r?{...DEFAULT_PREFS,...JSON.parse(r)}:{...DEFAULT_PREFS};}
+  catch{return{...DEFAULT_PREFS};}
+}
+function savePrefs(p){try{localStorage.setItem(PREF_KEY,JSON.stringify(p));}catch{}}
+
+function extractKw(text){
+  return(text||'').toLowerCase().replace(/[^a-zA-ZäöüÄÖÜß\s]/g,' ').split(/\s+/)
+    .filter(w=>w.length>4&&!STOPS.has(w)).slice(0,6);
+}
+
+function recordFeedback(prefs,article,type){
+  const p=JSON.parse(JSON.stringify(prefs));
+  const kws=extractKw((article.headline||'')+' '+(article.subheadline||''));
+  const src=article.sourceLabel||'';
+  const isLike=type==='like';
+  if(isLike)p.totalLikes=(p.totalLikes||0)+1;
+  else p.totalDislikes=(p.totalDislikes||0)+1;
+  const sm=isLike?'likedSources':'dislikedSources';
+  const km=isLike?'likedKeywords':'dislikedKeywords';
+  if(src)p[sm][src]=(p[sm][src]||0)+1;
+  kws.forEach(kw=>{p[km][kw]=(p[km][kw]||0)+1;});
+  p.history=[{id:article.id,hl:(article.headline||'').slice(0,80),src,type,ts:Date.now(),kws},...(p.history||[])].slice(0,100);
+  return p;
+}
+
+function topOf(obj,n=5){
+  return Object.entries(obj||{}).sort((a,b)=>b[1]-a[1]).slice(0,n);
+}
+
+function buildHint(prefs){
+  const total=(prefs.totalLikes||0)+(prefs.totalDislikes||0);
+  if(total<5)return{hint:'',total,active:false};
+  const ls=topOf(prefs.likedSources,3).map(([k])=>k);
+  const ds=topOf(prefs.dislikedSources,3).map(([k])=>k);
+  const lk=topOf(prefs.likedKeywords,6).map(([k])=>k);
+  const dk=topOf(prefs.dislikedKeywords,5).map(([k])=>k);
+  const parts=[];
+  if(ls.length)parts.push(`Bevorzuge Quellen: ${ls.join(', ')}`);
+  if(ds.length)parts.push(`Vermeide Quellen: ${ds.join(', ')}`);
+  if(lk.length)parts.push(`Themeninteressen: ${lk.join(', ')}`);
+  if(dk.length)parts.push(`Unerwünschte Themen: ${dk.join(', ')}`);
+  const hint=parts.length?'\n\n--- Nutzerpräferenzen (bitte anpassen) ---\n'+parts.map(p=>'• '+p).join('\n')+'\n---':'';
+  return{hint,total,active:!!hint};
+}
+
+/* ─── API ────────────────────────────────────────────────── */
+const BASE_PROMPT=`Du bist ein persönlicher KI-News-Redakteur. Du erstellst täglich ein personalisiertes KI-Briefing.
+
+Fokus: KI-Tools, Startups, Funding, neue Modelle, Produktlaunches.
+Quellen: TechCrunch, VentureBeat, The Information, Wired, Ars Technica, MIT Technology Review, The Verge, Bloomberg Tech.
+
+Antworte NUR mit reinem JSON (kein Markdown, keine Erklärungen):
+
+{"briefingSummary":"2-3 Sätze über die wichtigsten KI-Themen von heute.","articles":[{"id":"id1","headline":"Max 80 Zeichen","subheadline":"Ein Satz Einordnung","publishedAt":"ISO 8601","category":"tools|startups|funding|models|top","imageQuery":"english unsplash search term","body":"3-4 Absätze getrennt durch \\n\\n","sourceLabel":"Quellenname","sourceUrl":"https://..."}]}`;
+
+async function fetchNews(apiKey,tab,prefs){
+  const{hint}=buildHint(prefs);
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':apiKey,
+      'anthropic-version':'2023-06-01',
+      'anthropic-beta':'web-search-2025-03-05',
+      'anthropic-dangerous-direct-browser-access':'true',
+    },
+    body:JSON.stringify({
+      model:'claude-sonnet-4-5',
+      max_tokens:10000,
+      tools:[{type:'web_search_20250305',name:'web_search'}],
+      system:BASE_PROMPT+hint,
+      messages:[{role:'user',content:TAB_PROMPTS[tab]}],
+    }),
+  });
+  if(!res.ok){
+    const e=await res.json().catch(()=>({error:{message:res.statusText}}));
+    throw new Error(e?.error?.message||`HTTP ${res.status}`);
+  }
+  const data=await res.json();
+  const blocks=(data.content||[]).filter(b=>b.type==='text');
+  if(!blocks.length)throw new Error('Leere Antwort');
+  const raw=blocks[blocks.length-1].text.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+  const s=raw.indexOf('{'),e2=raw.lastIndexOf('}');
+  if(s<0||e2<0)throw new Error('Kein JSON in Antwort');
+  const parsed=JSON.parse(raw.slice(s,e2+1));
+  if(!parsed.articles?.length)throw new Error('Keine Artikel');
+  return parsed;
+}
+
+/* ─── ICONS ─────────────────────────────────────────────── */
+const IBack=()=><svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>;
+const IRefresh=({spin})=><svg className={`w-5 h-5 transition-transform ${spin?'animate-spin':''}`} fill="currentColor" viewBox="0 0 24 24"><path d="M17.65 6.35A7.96 7.96 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>;
+const IExternal=()=><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>;
+const ICamera=()=><svg className="w-10 h-10 text-gray-600" fill="currentColor" viewBox="0 0 24 24"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>;
+const IClose=()=><svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>;
+const IInfo=()=><svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>;
+const IThumbUp=()=><svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>;
+const IThumbDown=()=><svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L10.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>;
+
+/* ─── HELPERS ────────────────────────────────────────────── */
+function imgUrl(q,w=800,h=450){return`https://source.unsplash.com/${w}x${h}/?${encodeURIComponent(q||'artificial intelligence technology')}`;}
+function fmtDate(iso){
+  try{const d=new Date(iso);return d.toLocaleDateString('de-DE',{day:'numeric',month:'short'})+' · '+d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});}
+  catch{return'';}
+}
+function todayFull(){return new Date().toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
+
+/* ─── NewsImg ────────────────────────────────────────────── */
+function NewsImg({query,w=800,h=450,className=''}){
+  const[err,setErr]=useState(false);
+  const[ok,setOk]=useState(false);
+  if(err)return<div className={`${className} bg-[#2a2a2a] flex items-center justify-center`} style={{aspectRatio:`${w}/${h}`}}><ICamera/></div>;
+  return(
+    <div className={`${className} relative bg-[#1a1a1a] overflow-hidden`} style={{aspectRatio:`${w}/${h}`}}>
+      {!ok&&<div className="absolute inset-0 skeleton"/>}
+      <img src={imgUrl(query,w,h)} alt="" className={`w-full h-full object-cover transition-opacity duration-300 ${ok?'opacity-100':'opacity-0'}`} onLoad={()=>setOk(true)} onError={()=>setErr(true)}/>
+    </div>
+  );
+}
+
+/* ─── SKELETON ───────────────────────────────────────────── */
+function Skeleton(){
+  return(
+    <div className="bg-card rounded-2xl overflow-hidden mb-3">
+      <div className="skeleton w-full" style={{aspectRatio:'16/9'}}/>
+      <div className="p-4 space-y-2">
+        <div className="skeleton h-3 w-16 rounded"/>
+        <div className="skeleton h-5 w-full rounded"/>
+        <div className="skeleton h-5 w-4/5 rounded"/>
+        <div className="skeleton h-4 w-3/5 rounded"/>
+        <div className="flex justify-between items-center mt-3">
+          <div className="skeleton h-3 w-1/3 rounded"/>
+          <div className="flex gap-2"><div className="skeleton h-7 w-14 rounded-full"/><div className="skeleton h-7 w-14 rounded-full"/></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── BRIEFING CARD ──────────────────────────────────────── */
+function BriefingCard({summary,loading}){
+  return(
+    <div className="mx-3 mb-4 rounded-2xl border border-brand/25 bg-gradient-to-br from-brand/10 via-transparent to-purple-900/10 p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-brand bg-brand/15 px-2.5 py-1 rounded-full">KI-Briefing</span>
+        <span className="text-xs text-gray-600">{todayFull()}</span>
+      </div>
+      {loading
+        ?<div className="space-y-1.5"><div className="skeleton h-3.5 w-full rounded"/><div className="skeleton h-3.5 w-4/5 rounded"/><div className="skeleton h-3.5 w-2/3 rounded"/></div>
+        :<p className="text-sm text-gray-300 leading-relaxed">{summary||'Lade dein tägliches KI-Briefing…'}</p>
+      }
+    </div>
+  );
+}
+
+/* ─── FEEDBACK BUTTON ────────────────────────────────────── */
+function FbBtn({isLike,active,onClick}){
+  const base='flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-150 active:scale-90 ';
+  const style=active
+    ?(isLike?'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40':'bg-rose-500/20 text-rose-400 border border-rose-500/40')
+    :'bg-white/5 text-gray-500 border border-white/10 hover:bg-white/10';
+  return(
+    <button className={base+style} onClick={e=>{e.stopPropagation();onClick();}}>
+      {isLike?<IThumbUp/>:<IThumbDown/>}
+      <span>{isLike?'👍':'👎'}{active&&' ✓'}</span>
+    </button>
+  );
+}
+
+/* ─── ARTICLE CARD ───────────────────────────────────────── */
+const CAT_COLOR={tools:'text-sky-400',startups:'text-violet-400',funding:'text-amber-400',models:'text-emerald-400',top:'text-orange-400'};
+const CAT_LABEL={tools:'Tools',startups:'Startups',funding:'Funding',models:'Models',top:'Top'};
+
+function ArticleCard({article,onClick,fb,onFeedback}){
+  return(
+    <div className="bg-card rounded-2xl overflow-hidden mb-3 cursor-pointer active:scale-[0.99] transition-transform fade-in" onClick={()=>onClick(article)}>
+      <NewsImg query={article.imageQuery} className="w-full"/>
+      <div className="p-4">
+        <span className={`text-[11px] font-bold uppercase tracking-wider ${CAT_COLOR[article.category]||'text-brand'}`}>
+          {CAT_LABEL[article.category]||article.category}
+        </span>
+        <h2 className="serif text-[1.1rem] leading-snug font-normal mt-1 line-clamp-2 text-white">{article.headline}</h2>
+        <p className="text-sm text-gray-500 mt-1 line-clamp-2 leading-snug">{article.subheadline}</p>
+        <div className="flex items-center justify-between mt-3">
+          <div className="text-xs text-gray-600">
+            <span className="font-semibold text-gray-500">{article.sourceLabel}</span>
+            <span className="mx-1">·</span>
+            <span>{fmtDate(article.publishedAt)}</span>
+          </div>
+          <div className="flex gap-1.5">
+            <FbBtn isLike={true}  active={fb==='like'}    onClick={()=>onFeedback(article,'like')}/>
+            <FbBtn isLike={false} active={fb==='dislike'} onClick={()=>onFeedback(article,'dislike')}/>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── ARTICLE DETAIL ─────────────────────────────────────── */
+function ArticleDetail({article,onBack,fb,onFeedback}){
+  const paras=(article.body||'').split(/\n\n+/).filter(Boolean);
+  const mid=Math.min(2,paras.length-1);
+  return(
+    <div className="fade-in bg-surface min-h-screen">
+      <div className="sticky top-0 z-10 bg-surface/90 backdrop-blur border-b border-white/5 flex items-center px-4 py-3 gap-3">
+        <button onClick={onBack} className="text-brand flex items-center gap-1 font-semibold text-sm shrink-0"><IBack/>Zurück</button>
+        <span className="flex-1 text-xs font-bold uppercase tracking-wider text-gray-600 truncate">{article.sourceLabel}</span>
+        <div className="flex gap-1.5 shrink-0">
+          <FbBtn isLike={true}  active={fb==='like'}    onClick={()=>onFeedback(article,'like')}/>
+          <FbBtn isLike={false} active={fb==='dislike'} onClick={()=>onFeedback(article,'dislike')}/>
+        </div>
+      </div>
+      <NewsImg query={article.imageQuery} className="w-full"/>
+      <div className="px-4 py-5">
+        <span className={`text-[11px] font-bold uppercase tracking-wider ${CAT_COLOR[article.category]||'text-brand'}`}>{article.category}</span>
+        <h1 className="serif text-[1.45rem] leading-tight font-normal mt-2 text-white">{article.headline}</h1>
+        <p className="text-gray-400 text-[0.93rem] mt-2 leading-snug">{article.subheadline}</p>
+        <div className="flex items-center gap-2 text-xs text-gray-600 mt-3 pb-4 border-b border-white/5">
+          <span className="font-semibold text-gray-500">{article.sourceLabel}</span>
+          <span>·</span>
+          <span>{fmtDate(article.publishedAt)}</span>
+        </div>
+        <div className="mt-4 space-y-4 text-[1rem] leading-relaxed text-gray-300">
+          {paras.map((p,i)=>(
+            <React.Fragment key={i}>
+              <p>{p}</p>
+              {i===mid&&<div className="-mx-4"><NewsImg query={article.imageQuery+' closeup'} w={800} h={400} className="w-full"/></div>}
+            </React.Fragment>
+          ))}
+        </div>
+        {article.sourceUrl&&(
+          <div className="mt-8 p-4 bg-white/5 rounded-xl border-l-4 border-brand">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-600 mb-1">Originalartikel</p>
+            <a href={article.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-brand font-semibold text-sm hover:underline">
+              {article.sourceLabel}<IExternal/>
+            </a>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── INSIGHTS PANEL ─────────────────────────────────────── */
+function InsightsPanel({prefs,onClose,onReset}){
+  const total=(prefs.totalLikes||0)+(prefs.totalDislikes||0);
+  const{active}=buildHint(prefs);
+  const likedSrc=topOf(prefs.likedSources,5);
+  const likedKw=topOf(prefs.likedKeywords,8);
+  const dislikedKw=topOf(prefs.dislikedKeywords,5);
+  const dislikedSrc=topOf(prefs.dislikedSources,3);
+  return(
+    <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm"/>
+      <div className="relative bg-[#1c1c1e] rounded-t-3xl slide-up max-h-[88vh] flex flex-col" onClick={e=>e.stopPropagation()}>
+        <div className="px-6 pt-5 pb-4 border-b border-white/5 shrink-0">
+          <div className="w-9 h-1 bg-white/20 rounded-full mx-auto mb-4"/>
+          <div className="flex items-center justify-between">
+            <h2 className="serif text-xl text-white">Mein Profil</h2>
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-300 transition-colors"><IClose/></button>
+          </div>
+        </div>
+        <div className="overflow-y-auto hide-scroll px-6 py-4 space-y-5">
+          {/* Status */}
+          <div className={`flex items-center gap-3 p-4 rounded-2xl ${active?'bg-brand/10 border border-brand/25':'bg-white/5 border border-white/5'}`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0 ${active?'bg-brand/20':'bg-white/10'}`}>
+              {active?'✨':'🌱'}
+            </div>
+            <div>
+              <p className={`text-sm font-semibold ${active?'text-brand':'text-gray-300'}`}>
+                {active?'Personalisierung aktiv':'Noch im Lernmodus'}
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {total<5?`${total} von 5 Feedbacks — noch ${5-total} bis zur Anpassung`:`${total} Feedbacks · Prompts werden täglich optimiert`}
+              </p>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              {v:prefs.totalLikes||0,  label:'👍 Likes',   c:'text-emerald-400'},
+              {v:prefs.totalDislikes||0,label:'👎 Dislikes',c:'text-rose-400'},
+              {v:(prefs.history||[]).length,label:'📋 Gesamt', c:'text-gray-300'},
+            ].map(({v,label,c})=>(
+              <div key={label} className="bg-white/5 rounded-xl p-3 text-center">
+                <p className={`text-2xl font-bold ${c}`}>{v}</p>
+                <p className="text-[10px] text-gray-600 mt-0.5">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Liked topics */}
+          {likedKw.length>0&&(
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">Deine Top-Themen</p>
+              <div className="flex flex-wrap gap-1.5">
+                {likedKw.map(([kw,cnt])=>(
+                  <span key={kw} className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full px-3 py-1 text-xs">
+                    {kw} <span className="text-emerald-700 text-[10px]">×{cnt}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Liked sources */}
+          {likedSrc.length>0&&(
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">Bevorzugte Quellen</p>
+              <div className="space-y-1.5">
+                {likedSrc.map(([src,cnt])=>(
+                  <div key={src} className="flex items-center justify-between bg-white/5 rounded-xl px-3 py-2.5">
+                    <span className="text-sm text-gray-300">{src}</span>
+                    <div className="flex gap-3 text-xs">
+                      <span className="text-emerald-500">👍 {cnt}</span>
+                      {(prefs.dislikedSources[src]||0)>0&&<span className="text-rose-500">👎 {prefs.dislikedSources[src]}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Disliked topics */}
+          {dislikedKw.length>0&&(
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">Weniger Interesse</p>
+              <div className="flex flex-wrap gap-1.5">
+                {dislikedKw.map(([kw,cnt])=>(
+                  <span key={kw} className="bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-full px-3 py-1 text-xs">
+                    {kw} <span className="text-rose-700 text-[10px]">×{cnt}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* What the system does */}
+          {active&&(
+            <div className="bg-brand/8 border border-brand/15 rounded-2xl p-4">
+              <p className="text-xs font-semibold text-brand mb-2">Was das System jetzt tut:</p>
+              <ul className="text-xs text-gray-400 space-y-1.5">
+                {topOf(prefs.likedSources,2).length>0&&<li>• Bevorzugt Artikel von: {topOf(prefs.likedSources,2).map(([k])=>k).join(', ')}</li>}
+                {topOf(prefs.dislikedSources,2).length>0&&<li>• Vermeidet Quellen: {topOf(prefs.dislikedSources,2).map(([k])=>k).join(', ')}</li>}
+                {topOf(prefs.likedKeywords,3).length>0&&<li>• Sucht mehr zu: {topOf(prefs.likedKeywords,3).map(([k])=>k).join(', ')}</li>}
+                {topOf(prefs.dislikedKeywords,3).length>0&&<li>• Filtert heraus: {topOf(prefs.dislikedKeywords,3).map(([k])=>k).join(', ')}</li>}
+              </ul>
+            </div>
+          )}
+
+          {/* Empty */}
+          {total===0&&(
+            <div className="text-center py-10">
+              <p className="text-4xl mb-3">🤖</p>
+              <p className="text-gray-400 text-sm">Noch keine Feedbacks.</p>
+              <p className="text-gray-600 text-xs mt-1">Bewerte Artikel mit 👍 / 👎 um<br/>dein Briefing zu personalisieren.</p>
+            </div>
+          )}
+
+          {/* Reset */}
+          {total>0&&(
+            <button
+              onClick={()=>{if(window.confirm('Alle Präferenzen zurücksetzen?'))onReset();}}
+              className="w-full py-3 text-sm text-rose-400/70 border border-rose-500/15 rounded-xl hover:bg-rose-500/5 transition-colors mt-2"
+            >
+              Präferenzen zurücksetzen
+            </button>
+          )}
+          <div className="h-4"/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── API KEY SCREEN ─────────────────────────────────────── */
+function ApiKeyScreen({onSubmit}){
+  const[val,setVal]=useState('');
+  const[err,setErr]=useState('');
+  const[remember,setRemember]=useState(true);
+  function handle(){
+    const k=val.trim();
+    if(!k.startsWith('sk-')){setErr('Gültiger Anthropic API-Key beginnt mit sk-');return;}
+    if(remember)localStorage.setItem(KEY_STORE,k);
+    onSubmit(k);
+  }
+  return(
+    <div className="min-h-screen bg-surface flex flex-col items-center justify-center px-6 py-12">
+      <div className="w-20 h-20 bg-brand/10 border border-brand/20 rounded-3xl flex items-center justify-center mb-6 glow">
+        <svg className="w-10 h-10 text-brand" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+        </svg>
+      </div>
+      <h1 className="serif text-3xl text-white mb-2">AI Daily</h1>
+      <p className="text-gray-500 text-sm text-center mb-8 leading-relaxed max-w-xs">
+        Dein persönliches KI-Briefing — jeden Tag neu,<br/>automatisch angepasst an dein Feedback.
+      </p>
+      <div className="w-full max-w-xs space-y-3">
+        <input
+          type="password"
+          value={val}
+          onChange={e=>{setVal(e.target.value);setErr('');}}
+          onKeyDown={e=>e.key==='Enter'&&handle()}
+          placeholder="sk-ant-api03-..."
+          className="w-full bg-card border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white placeholder-gray-700 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/50"
+        />
+        {err&&<p className="text-xs text-rose-400">{err}</p>}
+        <label className="flex items-center gap-2.5 cursor-pointer">
+          <div className={`w-9 h-5 rounded-full transition-colors relative ${remember?'bg-brand':'bg-white/10'}`} onClick={()=>setRemember(r=>!r)}>
+            <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${remember?'left-4':'left-0.5'}`}/>
+          </div>
+          <span className="text-xs text-gray-500">API-Key merken</span>
+        </label>
+        <button onClick={handle} className="w-full bg-brand text-white rounded-xl py-3.5 font-semibold text-sm hover:bg-brand/90 active:scale-[0.98] transition-all">
+          Briefing starten
+        </button>
+        <div className="flex items-start gap-2 p-3 bg-white/3 rounded-xl border border-white/5">
+          <span className="text-yellow-500 text-xs mt-0.5">⚠</span>
+          <p className="text-[11px] text-gray-600 leading-relaxed">
+            Du benötigst einen <span className="text-gray-400">Anthropic API-Key</span> mit aktiviertem Web-Search-Beta.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── APP ────────────────────────────────────────────────── */
+function App(){
+  const[apiKey,setApiKey]=useState(()=>localStorage.getItem(KEY_STORE)||'');
+  const[tab,setTab]=useState('top');
+  const[cache,setCache]=useState({});
+  const[loading,setLoading]=useState({});
+  const[error,setError]=useState({});
+  const[detail,setDetail]=useState(null);
+  const[spinning,setSpinning]=useState(false);
+  const[prefs,setPrefs]=useState(()=>loadPrefs());
+  const[fbMap,setFbMap]=useState({});
+  const[showInsights,setShowInsights]=useState(false);
+
+  const loadTab=useCallback(async(t,force=false)=>{
+    if(loading[t])return;
+    if(cache[t]&&!force)return;
+    setLoading(p=>({...p,[t]:true}));
+    setError(p=>({...p,[t]:null}));
+    try{
+      const data=await fetchNews(apiKey,t,prefs);
+      setCache(p=>({...p,[t]:data}));
+    }catch(e){
+      setError(p=>({...p,[t]:e.message||'Unbekannter Fehler'}));
+    }finally{
+      setLoading(p=>({...p,[t]:false}));
+    }
+  },[apiKey,loading,cache,prefs]);
+
+  useEffect(()=>{if(apiKey)loadTab(tab);},[tab,apiKey]);
+
+  function refresh(){
+    setSpinning(true);
+    setCache(p=>({...p,[tab]:undefined}));
+    loadTab(tab,true).finally(()=>setSpinning(false));
+  }
+
+  function handleFeedback(article,type){
+    const cur=fbMap[article.id];
+    if(cur===type){
+      setFbMap(p=>({...p,[article.id]:null}));
+      return;
+    }
+    setFbMap(p=>({...p,[article.id]:type}));
+    const np=recordFeedback(prefs,article,type);
+    setPrefs(np);
+    savePrefs(np);
+  }
+
+  function handleReset(){
+    const fresh={...DEFAULT_PREFS};
+    setPrefs(fresh);
+    savePrefs(fresh);
+    setShowInsights(false);
+  }
+
+  if(!apiKey)return<ApiKeyScreen onSubmit={k=>setApiKey(k)}/>;
+
+  const data=cache[tab];
+  const articles=data?.articles||[];
+  const summary=data?.briefingSummary||null;
+  const isLoading=loading[tab];
+  const curErr=error[tab];
+  const{active:isAdapting,total:fbTotal}=buildHint(prefs);
+
+  if(detail){
+    return(
+      <div className="max-w-[430px] mx-auto">
+        <ArticleDetail
+          article={detail}
+          onBack={()=>setDetail(null)}
+          fb={fbMap[detail.id]}
+          onFeedback={handleFeedback}
+        />
+      </div>
+    );
+  }
+
+  return(
+    <div className="max-w-[430px] mx-auto min-h-screen bg-surface" style={{boxShadow:'0 0 80px rgba(0,0,0,.5)'}}>
+
+      {/* Header */}
+      <header className="sticky top-0 z-20 bg-surface/95 backdrop-blur-md border-b border-white/5">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-brand/15 border border-brand/25 rounded-xl flex items-center justify-center">
+              <svg className="w-4 h-4 text-brand" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+              </svg>
+            </div>
+            <span className="serif text-xl text-white">AI Daily</span>
+            {isAdapting&&(
+              <span className="text-[9px] font-bold uppercase tracking-widest bg-brand/15 text-brand border border-brand/25 rounded-full px-2 py-0.5">
+                Personalisiert
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={()=>setShowInsights(true)}
+              className="relative text-gray-500 hover:text-gray-300 transition-colors p-2"
+            >
+              <IInfo/>
+              {fbTotal>0&&<span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-brand rounded-full"/>}
+            </button>
+            <button onClick={refresh} disabled={isLoading} className="text-gray-500 hover:text-gray-300 transition-colors p-2">
+              <IRefresh spin={spinning||isLoading}/>
+            </button>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex hide-scroll overflow-x-auto border-t border-white/5 px-1">
+          {SUBTABS.map(t=>(
+            <button
+              key={t.id}
+              onClick={()=>setTab(t.id)}
+              className={`flex-shrink-0 px-3.5 py-3 text-sm font-semibold transition-colors relative ${tab===t.id?'text-brand':'text-gray-600 hover:text-gray-400'}`}
+            >
+              {t.label}
+              {tab===t.id&&<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand rounded-t-full"/>}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      {/* Feed */}
+      <main className="pb-10">
+        <div className="pt-3">
+          <BriefingCard summary={summary} loading={isLoading&&!summary}/>
+        </div>
+
+        {isLoading&&!articles.length&&(
+          <div className="px-3"><Skeleton/><Skeleton/><Skeleton/></div>
+        )}
+
+        {curErr&&(
+          <div className="mx-3 bg-card rounded-2xl p-6 text-center border border-white/5">
+            <p className="text-rose-400 font-semibold mb-1">Fehler beim Laden</p>
+            <p className="text-gray-500 text-sm mb-4 leading-relaxed">{curErr}</p>
+            <button onClick={()=>loadTab(tab,true)} className="bg-brand text-white px-5 py-2 rounded-xl text-sm font-semibold">
+              Nochmal versuchen
+            </button>
+          </div>
+        )}
+
+        {articles.length>0&&(
+          <div className="px-3">
+            {articles.map(a=>(
+              <ArticleCard
+                key={a.id}
+                article={a}
+                onClick={setDetail}
+                fb={fbMap[a.id]}
+                onFeedback={handleFeedback}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Progress banner */}
+        {articles.length>0&&fbTotal<5&&(
+          <div className="mx-3 mt-1 px-4 py-3 bg-white/3 border border-white/5 rounded-2xl text-center">
+            <p className="text-[11px] text-gray-600">
+              👍 / 👎 bewerten · nach <strong className="text-gray-500">{5-fbTotal}</strong> weiteren Feedbacks passt sich dein Briefing automatisch an
+            </p>
+          </div>
+        )}
+
+        {articles.length>0&&isAdapting&&(
+          <div className="mx-3 mt-1 px-4 py-3 bg-brand/8 border border-brand/15 rounded-2xl">
+            <p className="text-[11px] text-brand font-semibold">✨ Personalisierung aktiv</p>
+            <p className="text-[11px] text-gray-600 mt-0.5">Beim nächsten Refresh werden deine Präferenzen eingebaut.</p>
+          </div>
+        )}
+
+        {isLoading&&articles.length>0&&(
+          <div className="flex justify-center py-6">
+            <div className="w-5 h-5 border-2 border-brand border-t-transparent rounded-full animate-spin"/>
+          </div>
+        )}
+
+        {!isLoading&&!curErr&&!articles.length&&(
+          <div className="text-center py-16 text-gray-600 text-sm">Keine Artikel gefunden</div>
+        )}
+      </main>
+
+      {showInsights&&(
+        <InsightsPanel prefs={prefs} onClose={()=>setShowInsights(false)} onReset={handleReset}/>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
