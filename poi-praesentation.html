@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prämature Ovarialinsuffizienz (POI) – Fortbildung für Assistenzärzt:innen</title>
+<style>
+  :root{
+    --bg:#0e1726;
+    --panel:#13203a;
+    --ink:#e8eef7;
+    --muted:#9fb0c8;
+    --accent:#36c5b0;       /* teal */
+    --accent2:#6d8bff;      /* indigo */
+    --warn:#ffb454;
+    --danger:#ff6b6b;
+    --good:#54d18c;
+    --line:rgba(255,255,255,.10);
+    --card:#1a2942;
+    --radius:16px;
+    --shadow:0 18px 50px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(1200px 800px at 80% -10%,#1c2c4d 0%,var(--bg) 55%);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- Deck layout ---------- */
+  .deck{height:100vh;width:100vw;overflow:hidden;position:relative}
+  .slide{
+    position:absolute;inset:0;
+    display:none;
+    flex-direction:column;
+    padding:clamp(24px,5vw,70px);
+    animation:fade .45s ease;
+    overflow:auto;
+  }
+  .slide.active{display:flex}
+  @keyframes fade{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  .kicker{
+    display:inline-flex;align-items:center;gap:9px;
+    font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--accent);font-weight:700;margin-bottom:14px;
+  }
+  .kicker .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 14px var(--accent)}
+  h1{font-size:clamp(2rem,5.2vw,4rem);line-height:1.05;margin:.1em 0 .25em;font-weight:800;letter-spacing:-.02em}
+  h2{font-size:clamp(1.5rem,3.4vw,2.5rem);line-height:1.12;margin:0 0 .5em;font-weight:800;letter-spacing:-.01em}
+  h3{font-size:1.15rem;margin:0 0 .4em;font-weight:700}
+  p{font-size:clamp(1rem,1.5vw,1.22rem);line-height:1.55;color:var(--ink)}
+  .lead{color:var(--muted);max-width:60ch}
+  .muted{color:var(--muted)}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal;font-weight:600}
+
+  /* ---------- Title slide ---------- */
+  .title-wrap{margin:auto;max-width:1000px}
+  .title-wrap .sub{font-size:clamp(1.05rem,2vw,1.5rem);color:var(--muted);font-weight:500;max-width:46ch}
+  .pill{
+    display:inline-block;padding:6px 14px;border:1px solid var(--line);border-radius:999px;
+    font-size:.85rem;color:var(--muted);margin-top:10px;background:rgba(255,255,255,.03)
+  }
+  .byline{margin-top:34px;display:flex;flex-wrap:wrap;gap:10px}
+
+  /* ---------- Grids & cards ---------- */
+  .grid{display:grid;gap:18px;margin-top:10px}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  @media (max-width:900px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+  .card{
+    background:linear-gradient(180deg,var(--card),#15233c);
+    border:1px solid var(--line);border-radius:var(--radius);
+    padding:20px 22px;box-shadow:var(--shadow)
+  }
+  .card.tint{border-left:4px solid var(--accent)}
+  .card.tint2{border-left:4px solid var(--accent2)}
+  .card.warn{border-left:4px solid var(--warn)}
+  .card.danger{border-left:4px solid var(--danger)}
+  .card .big{font-size:clamp(1.8rem,3.4vw,2.6rem);font-weight:800;line-height:1;margin-bottom:6px}
+  .card .lab{color:var(--muted);font-size:.95rem}
+
+  ul.clean{list-style:none;padding:0;margin:.3em 0}
+  ul.clean li{position:relative;padding:7px 0 7px 30px;line-height:1.45;border-bottom:1px dashed var(--line)}
+  ul.clean li:last-child{border-bottom:none}
+  ul.clean li::before{content:"";position:absolute;left:4px;top:14px;width:9px;height:9px;border-radius:50%;
+    background:var(--accent);box-shadow:0 0 10px var(--accent)}
+  ul.check li::before{content:"✓";background:none;box-shadow:none;color:var(--good);font-weight:900;left:2px;top:6px;width:auto;height:auto}
+  ul.flag li::before{content:"⚑";background:none;box-shadow:none;color:var(--warn);left:0;top:6px;width:auto;height:auto}
+
+  /* ---------- Learning objectives / agenda numbered ---------- */
+  .steps{counter-reset:s;display:grid;gap:14px}
+  .step{display:flex;gap:16px;align-items:flex-start;background:rgba(255,255,255,.03);
+    border:1px solid var(--line);border-radius:14px;padding:14px 18px}
+  .step .n{flex:0 0 auto;width:38px;height:38px;border-radius:11px;display:grid;place-items:center;
+    font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#06121f}
+
+  /* ---------- Table ---------- */
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:1rem}
+  th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line)}
+  thead th{color:var(--accent);font-size:.82rem;letter-spacing:.08em;text-transform:uppercase}
+  tbody tr:hover{background:rgba(255,255,255,.03)}
+  td.poi{color:var(--accent);font-weight:700}
+
+  /* ---------- Case box ---------- */
+  .case{background:linear-gradient(120deg,rgba(109,139,255,.14),rgba(54,197,176,.10));
+    border:1px solid var(--line);border-left:5px solid var(--accent2);border-radius:var(--radius);
+    padding:24px 26px;max-width:75ch}
+  .case .q{margin-top:14px;color:var(--warn);font-weight:600}
+
+  /* ---------- Pie (causes) ---------- */
+  .pie-wrap{display:flex;gap:40px;align-items:center;flex-wrap:wrap}
+  .pie{width:240px;height:240px;border-radius:50%;flex:0 0 auto;
+    background:conic-gradient(
+      var(--accent2) 0 70%,
+      var(--accent) 70% 86%,
+      var(--warn) 86% 95%,
+      var(--danger) 95% 99.5%,
+      var(--muted) 99.5% 100%);
+    box-shadow:var(--shadow);position:relative}
+  .pie::after{content:"";position:absolute;inset:30%;border-radius:50%;background:var(--bg)}
+  .legend{display:grid;gap:10px}
+  .legend div{display:flex;align-items:center;gap:10px;font-size:1.05rem}
+  .sw{width:16px;height:16px;border-radius:5px;flex:0 0 auto}
+
+  /* ---------- Pivot / pathway ---------- */
+  .organs{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:14px}
+  @media (max-width:900px){.organs{grid-template-columns:repeat(2,1fr)}}
+  .organ{text-align:center;background:rgba(255,255,255,.03);border:1px solid var(--line);
+    border-radius:14px;padding:16px 10px}
+  .organ .ic{font-size:1.9rem}
+  .center-node{margin:6px auto 0;max-width:560px;text-align:center;background:linear-gradient(135deg,var(--danger),#b23a3a);
+    color:#fff;border-radius:14px;padding:14px 20px;font-weight:700;box-shadow:var(--shadow)}
+
+  /* ---------- Quiz ---------- */
+  .quiz{max-width:80ch}
+  .opt{display:block;width:100%;text-align:left;margin:8px 0;padding:13px 16px;border-radius:12px;
+    border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:1.05rem;cursor:pointer;transition:.2s}
+  .opt:hover{border-color:var(--accent)}
+  .opt.correct{border-color:var(--good);background:rgba(84,209,140,.16)}
+  .opt.wrong{border-color:var(--danger);background:rgba(255,107,107,.14)}
+  .explain{margin-top:14px;padding:14px 16px;border-radius:12px;background:rgba(54,197,176,.10);
+    border:1px solid var(--line);display:none}
+  .explain.show{display:block}
+
+  /* ---------- Footer / chrome ---------- */
+  .chrome{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:space-between;
+    padding:12px 22px;font-size:.85rem;color:var(--muted);z-index:30;pointer-events:none}
+  .chrome .brand{font-weight:700;color:var(--ink);opacity:.8}
+  .nav{position:fixed;right:22px;bottom:46px;display:flex;gap:8px;z-index:40}
+  .nav button{pointer-events:auto;width:46px;height:46px;border-radius:12px;border:1px solid var(--line);
+    background:var(--panel);color:var(--ink);font-size:1.2rem;cursor:pointer;transition:.2s;box-shadow:var(--shadow)}
+  .nav button:hover{border-color:var(--accent);color:var(--accent)}
+  .progress{position:fixed;top:0;left:0;height:4px;background:linear-gradient(90deg,var(--accent),var(--accent2));
+    z-index:50;transition:width .3s ease}
+  .counter{position:fixed;left:22px;bottom:46px;z-index:40;font-variant-numeric:tabular-nums;color:var(--muted);
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:.85rem}
+  .hint{position:fixed;top:14px;right:22px;z-index:40;color:var(--muted);font-size:.78rem;opacity:.7}
+  .ref{font-size:.82rem;color:var(--muted);margin-top:auto;padding-top:18px}
+  .tag{display:inline-block;font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;
+    background:rgba(54,197,176,.16);color:var(--accent);border-radius:6px;padding:3px 9px;margin-left:8px;font-weight:700;vertical-align:middle}
+  .two-col{display:grid;grid-template-columns:1.1fr .9fr;gap:26px;align-items:start}
+  @media (max-width:900px){.two-col{grid-template-columns:1fr}}
+  .note{font-size:.95rem;color:var(--muted);margin-top:8px}
+  .hr{height:1px;background:var(--line);margin:16px 0;border:none}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="hint">← / → blättern · F Vollbild · O Übersicht</div>
+
+<div class="deck" id="deck">
+
+  <!-- 1 TITLE -->
+  <section class="slide active">
+    <div class="title-wrap">
+      <span class="kicker"><span class="dot"></span>Gynäkologische Endokrinologie · Fortbildung</span>
+      <h1>Prämature Ovarial&shy;insuffizienz</h1>
+      <p class="sub">Mehr als nur Fertilitätsverlust – der frühe Estrogenmangel als systemische Erkrankung.<br>
+      Eine praxisorientierte Einführung für Assistenzärzt:innen.</p>
+      <div class="byline">
+        <span class="pill">📘 Nach der ESHRE/ASRM/IMS-Leitlinie 2025</span>
+        <span class="pill">🎯 Zielgruppe: Weiterbildung Endokrinologie / Gynäkologie</span>
+        <span class="pill">⏱️ ~25–30 Min</span>
+      </div>
+      <p class="ref">Didaktische Aufbereitung von: Bralo H. et al. „POI – Was ist zu beachten?“, FRAUENARZT 4/2026, Fortbildung &amp; Kongress.</p>
+    </div>
+  </section>
+
+  <!-- 2 LERNZIELE -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>Lernziele</span>
+    <h2>Was Sie nach dieser Einheit können</h2>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><div><strong>Diagnose stellen</strong> – die ESHRE-Kriterien der POI sicher anwenden und gegen die frühe Menopause abgrenzen.</div></div>
+      <div class="step"><div class="n">2</div><div><strong>Ätiologie einordnen</strong> – idiopathische, genetische, autoimmune und iatrogene Ursachen unterscheiden.</div></div>
+      <div class="step"><div class="n">3</div><div><strong>Gezielt abklären</strong> – sinnvolle genetische und immunologische Basisdiagnostik veranlassen.</div></div>
+      <div class="step"><div class="n">4</div><div><strong>Langzeitrisiken erkennen</strong> – kardiovaskuläre, ossäre, kognitive und psychosoziale Folgen des Estrogenmangels.</div></div>
+      <div class="step"><div class="n">5</div><div><strong>Richtig therapieren</strong> – die POI-spezifische Hormontherapie korrekt dosieren – sie ist <em>keine</em> klassische postmenopausale HRT.</div></div>
+    </div>
+  </section>
+
+  <!-- 3 AGENDA -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>Roadmap</span>
+    <h2>Der rote Faden</h2>
+    <div class="grid g3">
+      <div class="card tint"><h3>① Erkennen</h3><p class="muted">Definition · Epidemiologie · Wann an POI denken?</p></div>
+      <div class="card tint"><h3>② Verstehen</h3><p class="muted">Pathophysiologie · Genetik · Autoimmunität</p></div>
+      <div class="card tint"><h3>③ Abklären</h3><p class="muted">Genetische &amp; immunologische Basisdiagnostik</p></div>
+      <div class="card tint2"><h3>④ Schützen</h3><p class="muted">Langzeitfolgen: Herz · Knochen · Hirn · Psyche</p></div>
+      <div class="card tint2"><h3>⑤ Behandeln</h3><p class="muted">Estrogen- &amp; Gestagentherapie – POI-Dosierung</p></div>
+      <div class="card tint2"><h3>⑥ Festigen</h3><p class="muted">Take-home · Selbstkontrolle (Quiz)</p></div>
+    </div>
+    <p class="note">Wir folgen dem klinischen Weg: von der Verdachtsdiagnose über die Ursachensuche bis zur lebenslangen, organübergreifenden Betreuung.</p>
+  </section>
+
+  <!-- 4 CASE -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>Klinischer Aufhänger</span>
+    <h2>Eine typische Sprechstunde</h2>
+    <div class="case">
+      <p><strong>Patientin, 32 Jahre.</strong> Seit ca. 6 Monaten keine Regelblutung mehr, davor zunehmend unregelmäßig. Berichtet über Hitzewallungen, Schlafstörungen und „Brain Fog“. Kinderwunsch besteht. Die Mutter sei „früh in die Wechseljahre gekommen“.</p>
+      <p class="muted">Labor extern: FSH 38 IU/l, Estradiol niedrig.</p>
+      <p class="q">→ Welche Diagnose steht im Raum? Welche drei Fragen entscheiden über das weitere Vorgehen? Welche Risiken übersieht man leicht?</p>
+    </div>
+    <p class="note">Behalten Sie diese Patientin im Kopf – wir kommen am Ende auf sie zurück.</p>
+  </section>
+
+  <!-- 5 DEFINITION -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>① Erkennen</span>
+    <h2>Definition nach ESHRE</h2>
+    <div class="two-col">
+      <div>
+        <ul class="clean">
+          <li>Alter <strong>&lt; 40 Jahre</strong></li>
+          <li>Primäre oder sekundäre <strong>Oligo-/Amenorrhoe ≥ 4–6 Monate</strong></li>
+          <li><strong>FSH &gt; 25 IU/l</strong> (in zwei Bestimmungen bei unklarem Befund)</li>
+        </ul>
+        <hr class="hr">
+        <p class="note"><strong>Neu in der Leitlinie:</strong> Die routinemäßige FSH-Kontrolle nach 4 Wochen ist <em>nicht</em> mehr obligat – nur noch bei unklarem Befund.</p>
+      </div>
+      <div class="card warn">
+        <h3>Abgrenzung wichtig</h3>
+        <p><strong>POI</strong> = &lt; 40 Jahre.<br>
+        <strong>Frühe Menopause</strong> = 40.–45. Lebensjahr (betrifft ~12 % aller Frauen).</p>
+        <p class="note">POI ist <em>nicht</em> gleich „frühe Wechseljahre“ – die Restfunktion ist fluktuierend, spontane Ovulationen und sogar Schwangerschaften bleiben möglich.</p>
+      </div>
+    </div>
+    <p class="ref">Tab. 1 · ESHRE-Leitlinie 2025.</p>
+  </section>
+
+  <!-- 6 EPIDEMIOLOGIE -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>① Erkennen</span>
+    <h2>Epidemiologie – häufiger als gedacht</h2>
+    <div class="grid g4">
+      <div class="card tint"><div class="big">1–3,7 %</div><div class="lab">der Frauen &lt; 40 Jahre</div></div>
+      <div class="card tint"><div class="big">~0,1 %</div><div class="lab">der Frauen &lt; 30 Jahre</div></div>
+      <div class="card tint2"><div class="big">~12 %</div><div class="lab">frühe Menopause (40–45 J.)</div></div>
+      <div class="card warn"><div class="big">50–90 %</div><div class="lab">bleiben idiopathisch</div></div>
+    </div>
+    <p class="note">Bei jeder jungen Frau mit Zyklusstörung &amp; klimakterischen Beschwerden ist POI eine <em>realistische</em> Differenzialdiagnose – nicht eine Rarität.</p>
+  </section>
+
+  <!-- 7 WANN DARAN DENKEN -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>① Erkennen · Praxisbox 1</span>
+    <h2>Wann an POI denken?</h2>
+    <div class="two-col">
+      <div class="card danger">
+        <ul class="clean flag">
+          <li>Amenorrhoe oder Oligomenorrhoe <strong>&gt; 4–6 Monate</strong> bei Frauen &lt; 40 J.</li>
+          <li><strong>Klimakterische Beschwerden</strong> bei jungen Patientinnen (Hitzewallungen, Schlaf, Stimmung)</li>
+          <li>Positive <strong>Familienanamnese</strong> (POI, frühe Menopause)</li>
+        </ul>
+      </div>
+      <div>
+        <p>Diese drei „Trigger“ sollten reflexartig die Bestimmung von <strong>FSH und Estradiol</strong> auslösen.</p>
+        <p class="note">Cave: Symptome werden bei jungen Frauen häufig fehlgedeutet (Stress, Pille, Schilddrüse) – die Diagnose verzögert sich im Mittel um Jahre.</p>
+      </div>
+    </div>
+    <p class="ref">Tab. 1 · Hinweise für die klinische Verdachtsdiagnose.</p>
+  </section>
+
+  <!-- 8 ÄTIOLOGIE PIE -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>② Verstehen</span>
+    <h2>Pathophysiologie &amp; Ätiologie</h2>
+    <p class="lead">Zwei Grundmechanismen: <em>verstärkte Follikelatresie</em> oder <em>vorgeburtliche Anlagestörung</em> des Primordialfollikelpools.</p>
+    <div class="pie-wrap">
+      <div class="pie"></div>
+      <div class="legend">
+        <div><span class="sw" style="background:var(--accent2)"></span><strong>Idiopathisch</strong> &nbsp;50–90 %</div>
+        <div><span class="sw" style="background:var(--accent)"></span><strong>Genetisch</strong> &nbsp;20–25 %</div>
+        <div><span class="sw" style="background:var(--warn)"></span><strong>Autoimmun</strong> &nbsp;4–30 %</div>
+        <div><span class="sw" style="background:var(--danger)"></span><strong>Iatrogen</strong> &nbsp;~11 %</div>
+        <div><span class="sw" style="background:var(--muted)"></span><strong>Andere</strong> &nbsp;&lt; 2 %</div>
+      </div>
+    </div>
+    <p class="note">Die Anteile überlappen (Mehrfachursachen möglich). Trotz „idiopathisch“ in der Mehrzahl lohnt die gezielte Suche – sie hat unmittelbare Konsequenzen.</p>
+  </section>
+
+  <!-- 9 GENETIK ÜBERBLICK -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>② Verstehen · Genetik</span>
+    <h2>Genetik: polygen &amp; heterogen</h2>
+    <div class="grid g3">
+      <div class="card tint"><h3>X-chromosomal</h3><p class="muted">Klassische Loci – plus zahlreiche neue Varianten via Next-Generation-Sequencing (NGS).</p></div>
+      <div class="card tint"><h3>DNA-Reparatur</h3><p class="muted">Defekte → Akkumulation von DNA-Schäden → vorzeitige Apoptose der Primordialfollikel.</p></div>
+      <div class="card tint"><h3>Mitochondrien &amp; Stoffwechsel</h3><p class="muted">Energiestoffwechsel der Oozyte als vulnerable Achse.</p></div>
+    </div>
+    <p class="note">Viele Patientinnen tragen <strong>mehrere</strong> pathogene Varianten gleichzeitig → polygenes Muster. Der prädiktive Wert von Genpanels ist noch nicht für die Routine validiert – Interpretation im spezialisierten Setting.</p>
+  </section>
+
+  <!-- 10 FXPOI -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>② Verstehen · Genetik <span class="tag">häufigste monogene Form</span></span>
+    <h2>Fragiles-X-assoziierte POI (FXPOI)</h2>
+    <div class="two-col">
+      <div>
+        <ul class="clean">
+          <li><strong>FMR1-Prämutation: 55–200 CGG-Repeats</strong></li>
+          <li>&gt; 200 Repeats = Vollmutation → <strong>Fragiles-X-Syndrom (FXS)</strong> bei Nachkommen</li>
+          <li>Schweregrad korreliert <em>nicht</em> mit der Repeat-Zahl</li>
+          <li>Mechanismus: toxischer „gain of function“ (FMRpolyG), <em>nicht</em> Gen-Inaktivierung</li>
+        </ul>
+      </div>
+      <div class="card warn">
+        <h3>Wichtige Spätfolge: FXTAS</h3>
+        <p>Fragiles-X-assoziiertes <strong>Tremor/Ataxie-Syndrom</strong> – neurodegenerativ, Beginn meist ab dem 50. Lj.: zerebelläre Ataxie + Intentionstremor, später kognitive Defizite.</p>
+        <p class="note">Nur Prämutations-Trägerinnen betroffen (~16 % der Frauen, ~40 % der Männer). → Genetische Beratung ist essenziell.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 UTS -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>② Verstehen · Genetik</span>
+    <h2>Ullrich-Turner-Syndrom (UTS)</h2>
+    <div class="two-col">
+      <div>
+        <ul class="clean">
+          <li>Reine Monosomie <strong>45,X</strong> oder <strong>Mosaike</strong> (z. B. 45,X/46,XX bei 15–25 %)</li>
+          <li>Reine Monosomie → meist <strong>primäre</strong> Amenorrhoe (bei ~3 % vorübergehend spontane Menses)</li>
+          <li>Mosaike → häufiger <strong>sekundäre</strong> Amenorrhoe</li>
+          <li>Variabilität durch X-Inaktivierungsmuster</li>
+        </ul>
+      </div>
+      <div class="card danger">
+        <h3>Konsequenz fürs Management</h3>
+        <p>Beim UTS unbedingt <strong>kardiovaskuläre Komorbiditäten</strong> abklären (Aortopathie, Vitien) – sie bestimmen die Prognose.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 GENETISCHE DIAGNOSTIK -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>③ Abklären · Praxisbox 2</span>
+    <h2>Genetische Basisdiagnostik</h2>
+    <div class="grid g3">
+      <div class="card tint"><h3>Karyotypisierung</h3><p class="muted">Ausschluss UTS (45,X oder Mosaik).</p></div>
+      <div class="card tint"><h3>FMR1-Analyse</h3><p class="muted">Prämutation (55–200 CGG) vs. Vollmutation (&gt; 200 CGG).</p></div>
+      <div class="card tint2"><h3>NGS-Genpanel</h3><p class="muted">Bei Verfügbarkeit anbieten – Interpretation spezialisiert.</p></div>
+    </div>
+    <hr class="hr">
+    <p><strong>Warum?</strong> Identifikation mono- &amp; polygener Ursachen · Grundlage für genetische Beratung der Patientin <em>und</em> ihrer Familie · individuelle Risiko- und Familienplanung. Das POI-Risiko weiblicher Verwandter ist deutlich erhöht.</p>
+    <p class="ref">Tab. 2 · Genetische Abklärung bei POI.</p>
+  </section>
+
+  <!-- 13 IMMUNSYSTEM -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>② Verstehen · Autoimmunität</span>
+    <h2>Die Rolle des Immunsystems</h2>
+    <div class="two-col">
+      <div class="card tint">
+        <h3>Humorale Immunität</h3>
+        <ul class="clean">
+          <li>Anti-Ovar-Antikörper (AOA), „steroid cell antibodies“ (SCA)</li>
+          <li>Ziel: Steroidogenese-Enzyme – <strong>CYP-Enzyme, 17α-Hydroxylase, SCC, 21-Hydroxylase</strong></li>
+          <li>Auch gegen Nebennierenrinde → Mitbeteiligung bei M. Addison</li>
+        </ul>
+      </div>
+      <div class="card tint2">
+        <h3>Zelluläre Immunität</h3>
+        <ul class="clean">
+          <li>↓ regulatorische T-Zellen (Treg) → überschießende Inflammation</li>
+          <li>↑ proinflammatorische Zytokine (IL-1α, IL-6, TNFα, IL-17, IFNγ …), ↓ IL-10</li>
+          <li>Folge: beschleunigte <strong>Follikelatresie</strong></li>
+        </ul>
+      </div>
+    </div>
+    <p class="note">Gemeinsame Endstrecke: autoimmune Oophoritis. Schlüsselregulatoren u. a. FOXP3 / FOXO3a.</p>
+  </section>
+
+  <!-- 14 AUTOIMMUNE KOMORBIDITÄT -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>② Verstehen · Autoimmunität</span>
+    <h2>POI als Sentinel autoimmuner Erkrankungen</h2>
+    <div class="grid g4">
+      <div class="card warn"><div class="big">bis 40 %</div><div class="lab">≥ 1 begleitende Autoimmunopathie</div></div>
+      <div class="card tint"><div class="big">Nr. 1</div><div class="lab">Autoimmunthyreoiditis</div></div>
+      <div class="card danger"><div class="big">10–20 %</div><div class="lab">der M.-Addison-Pat. entwickeln POI</div></div>
+      <div class="card danger"><div class="big">2,5–20 %</div><div class="lab">der POI mit adrenaler Autoimmunität</div></div>
+    </div>
+    <div class="card danger" style="margin-top:18px">
+      <p>⚠️ <strong>Klinische Perle:</strong> Die POI geht der Nebenniereninsuffizienz oft <em>zeitlich voraus</em> – sie kann ein <strong>Frühmarker</strong> für einen drohenden M. Addison sein. Daher bei Diagnose gezielt screenen!</p>
+    </div>
+    <p class="note">Weitere Assoziationen: RA, SLE, Psoriasis, Vitiligo, Myasthenia gravis, Zöliakie, M. Crohn.</p>
+  </section>
+
+  <!-- 15 APS TABELLE -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>② Verstehen · Autoimmunität</span>
+    <h2>Autoimmunes polyglanduläres Syndrom (APS)</h2>
+    <table>
+      <thead><tr><th>Typ</th><th>Charakteristische Manifestationen</th></tr></thead>
+      <tbody>
+        <tr><td class="poi">APS I</td><td>Mukokutane Candidiasis · Hypoparathyreoidismus · M. Addison (+ Hepatitis, perniziöse Anämie, Vitiligo)</td></tr>
+        <tr><td class="poi">APS II</td><td>M. Addison · Autoimmunthyreoiditis · Diabetes mellitus Typ 1 (Schmidt-Syndrom)</td></tr>
+        <tr><td class="poi">APS III</td><td>Autoimmunthyreoiditis + weitere AI-Erkrankung, <em>ohne</em> M. Addison (IIIA: +DM1, IIIB: +perniziöse Anämie, IIIC: +Vitiligo/Alopezie u. a.)</td></tr>
+        <tr><td class="poi">APS IV</td><td>M. Addison + andere AI-Erkrankungen außerhalb der APS-I/II-Kombinationen</td></tr>
+      </tbody>
+    </table>
+    <p class="ref">Tab. 3 · Einteilung des APS. Merke: M. Addison ist die „rote Linie“ zwischen den Typen.</p>
+  </section>
+
+  <!-- 16 AUTOAK SCREENING -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>③ Abklären · Praxisbox 3 / Tab. 4</span>
+    <h2>Immunologisches Screening – schlank &amp; gezielt</h2>
+    <div class="two-col">
+      <div class="card tint">
+        <h3>Empfohlen (ESHRE)</h3>
+        <ul class="clean check">
+          <li><strong>Anti-21-Hydroxylase-Antikörper</strong> – verlässlichster Marker der autoimmunen POI</li>
+          <li><strong>TSH</strong>; bei Auffälligkeit/Symptomatik zusätzlich <strong>TPO-Antikörper</strong></li>
+        </ul>
+      </div>
+      <div class="card warn">
+        <h3>Nicht empfohlen</h3>
+        <p>Routinemäßiges erweitertes Autoimmun-Screening <em>ohne</em> klinischen Verdacht. AOA sind nicht standardisiert, Titer korreliert kaum mit Schweregrad.</p>
+        <p class="note">Weitere Tests nur bei entsprechender Symptomatik.</p>
+      </div>
+    </div>
+    <p class="note">Faustregel: 21-OH-AK + TSH gehören zur Basis – alles Weitere ist symptomgesteuert.</p>
+  </section>
+
+  <!-- 17 PIVOT LANGZEITFOLGEN -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>④ Schützen · Dreh- &amp; Angelpunkt</span>
+    <h2>Der frühe Estrogenmangel trifft den ganzen Körper</h2>
+    <div class="center-node">Vorzeitiger, langjähriger Estrogenmangel</div>
+    <div class="organs">
+      <div class="organ"><div class="ic">❤️</div><strong>Herz-Kreislauf</strong><p class="note">↑ KHK, Mortalität</p></div>
+      <div class="organ"><div class="ic">🦴</div><strong>Knochen</strong><p class="note">Osteoporose, Frakturen</p></div>
+      <div class="organ"><div class="ic">🧠</div><strong>Kognition</strong><p class="note">↑ Demenzrisiko</p></div>
+      <div class="organ"><div class="ic">🩸</div><strong>Metabolismus</strong><p class="note">Diabetes, Dyslipidämie</p></div>
+      <div class="organ"><div class="ic">💬</div><strong>Psyche</strong><p class="note">Angst, Depression</p></div>
+    </div>
+    <p class="note">Kernbotschaft der Fortbildung: POI ist eine <em>systemische</em> Erkrankung. Die Hormontherapie ist hier <strong>Substitution bis zum natürlichen Menopausenalter</strong>, nicht optionale Symptomlinderung.</p>
+  </section>
+
+  <!-- 18 KARDIOVASKULÄR -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>④ Schützen · Herz-Kreislauf</span>
+    <h2>Kardiovaskuläres Risiko</h2>
+    <p class="lead">Mechanismus: endotheliale Dysfunktion · ungünstige Lipidprofile · proinflammatorische Prozesse → Atherosklerose.</p>
+    <div class="grid g3">
+      <div class="card danger"><div class="big">HR 1,55</div><div class="lab">CVD bei unbehandelter POI<br><span class="muted">Zhu et al. 2020, n = 301.438</span></div></div>
+      <div class="card danger"><div class="big">HR 1,42</div><div class="lab">Koronare Herzkrankheit<br><span class="muted">Gandevani et al. 2023</span></div></div>
+      <div class="card warn"><div class="big">+3 %</div><div class="lab">CVD-Risiko pro Jahr früherer Menopause</div></div>
+    </div>
+    <p class="note">Zusätzlich erhöhte Gesamtmortalität (Shanghai Women’s Health Study: HR 1,29). → POI ist ein <strong>unabhängiger, geschlechtsspezifischer kardiovaskulärer Risikofaktor</strong>.</p>
+  </section>
+
+  <!-- 19 CV MANAGEMENT -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>④ Schützen · Praxisbox 4 / Tab. 5</span>
+    <h2>Kardiovaskuläres Management – 5 Schritte</h2>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><div><strong>POI als Risikofaktor einordnen</strong> – im Kopf und in der Akte.</div></div>
+      <div class="step"><div class="n">2</div><div><strong>Risikostratifizierung bei Diagnose</strong> – Blutdruck, Lipidprofil, Nüchternglukose/HbA1c, BMI, Raucherstatus, Familienanamnese.</div></div>
+      <div class="step"><div class="n">3</div><div><strong>Verlaufskontrollen</strong> – kardiometabolische Parameter jährlich bis zweijährlich.</div></div>
+      <div class="step"><div class="n">4</div><div><strong>Lebensstil konsequent</strong> – Bewegung, Ernährung, Gewichtsnormalisierung, Nikotinkarenz.</div></div>
+      <div class="step"><div class="n">5</div><div><strong>Hormontherapie</strong> – sofern keine Kontraindikation: individualisiert indiziert.</div></div>
+    </div>
+  </section>
+
+  <!-- 20 KOGNITION -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>④ Schützen · Kognition</span>
+    <h2>POI &amp; kognitive Gesundheit</h2>
+    <p class="lead">Inverser Zusammenhang: je früher die Menopause, desto höher das Demenzrisiko (Estrogen wirkt neuroprotektiv).</p>
+    <div class="grid g3">
+      <div class="card tint2"><div class="big">HR 1,36</div><div class="lab">Demenz bei Menopause &lt; 40 J.<br><span class="muted">UK Biobank, n = 160.080</span></div></div>
+      <div class="card danger"><div class="big">HR 1,94</div><div class="lab">bei chirurgischer Menopause &lt; 40 J.<br><span class="muted">abrupter absoluter Mangel</span></div></div>
+      <div class="card tint2"><div class="big">OR 1,18</div><div class="lab">kognitive Beeinträchtigung/Demenz<br><span class="muted">Karamitrou 2023, &gt; 4 Mio. Frauen</span></div></div>
+    </div>
+    <p class="note">Besonders deutlich bei abruptem (chirurgischem) Estrogenverlust – ein starkes Argument für rechtzeitige Substitution.</p>
+  </section>
+
+  <!-- 21 KNOCHEN -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>④ Schützen · Knochen</span>
+    <h2>Knochengesundheit</h2>
+    <div class="two-col">
+      <div>
+        <ul class="clean">
+          <li>Estrogenmangel → ↑ Osteoklasten → ↑ Resorption → Verlust trabekulärer Substanz</li>
+          <li>Bis zu <strong>+40 % Osteoporose- &amp; Frakturrisiko</strong> vs. natürliche Menopause (23-J.-Längsschnitt, n &gt; 8.000)</li>
+          <li>Adäquat dosiertes Estrogen <strong>stabilisiert</strong> die Knochendichte</li>
+          <li>Therapiepausen &gt; 1 Jahr → signifikanter Knochenverlust</li>
+        </ul>
+      </div>
+      <div class="card tint">
+        <h3>Praxis</h3>
+        <ul class="clean check">
+          <li><strong>DXA bei Diagnosestellung</strong></li>
+          <li>Estrogensubstitution <strong>unmittelbar</strong> nach Diagnose beginnen</li>
+          <li>Höhere Estrogendosen → günstigere Effekte auf die BMD</li>
+        </ul>
+      </div>
+    </div>
+    <p class="note">Entscheidend ist der <em>Zeitpunkt</em>: je länger unbehandelt hypoöstrogen, desto größer der Verlust.</p>
+  </section>
+
+  <!-- 22 HRT PRINZIP -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>⑤ Behandeln · Prinzip</span>
+    <h2>Hormontherapie bei POI ≠ postmenopausale HRT</h2>
+    <div class="two-col">
+      <div class="card tint">
+        <h3>Ziel</h3>
+        <p>Wiederherstellung <strong>prämenopausaler, altersphysiologischer Estradiolspiegel</strong> – nicht nur Symptomkontrolle.</p>
+        <p class="note">→ deshalb <strong>höhere</strong> Estradioldosen als in der klassischen HRT.</p>
+      </div>
+      <div class="card tint2">
+        <h3>Konsequenz</h3>
+        <p>Die <strong>Gestagendosis</strong> wird an die höhere Estrogenexposition angepasst, um eine ausreichende <strong>Endometriumprotektion</strong> zu sichern.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <p><strong>Evidenz:</strong> Langfristige Substitution → günstigeres kardiometabolisches Profil, stabilere BMD, geringeres Risiko kognitiver Einschränkungen. ESHRE empfiehlt: bei fehlender Kontraindikation <strong>individualisierte Therapie bis zum natürlichen Menopausenalter (~51 J.)</strong>.</p>
+    </div>
+  </section>
+
+  <!-- 23 ESTRADIOL DOSING -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>⑤ Behandeln · Tab. 6</span>
+    <h2>Estradiol-Dosierung: Standard vs. POI</h2>
+    <table>
+      <thead><tr><th>Applikation</th><th>Standard (postmenopausal)</th><th>POI</th></tr></thead>
+      <tbody>
+        <tr><td>Pflaster</td><td>25–50 µg</td><td class="poi">75–100 µg</td></tr>
+        <tr><td>Gel (Dosis)</td><td>0,5–1,0 mg</td><td class="poi">1,5–2,0 mg</td></tr>
+        <tr><td>Gel (Hübe)</td><td>0,75 mg</td><td class="poi">3–4 Hübe</td></tr>
+        <tr><td>Spray</td><td>1,5 mg</td><td class="poi">3–4 Sprühdosen</td></tr>
+        <tr><td>Oral</td><td>1–2 mg</td><td class="poi">mind. 2 mg</td></tr>
+      </tbody>
+    </table>
+    <p class="ref">Tab. 6 · modifiziert nach ESHRE-Leitlinie. Transdermal bevorzugt (geringeres VTE-Risiko, kein First-Pass-Effekt).</p>
+  </section>
+
+  <!-- 24 GESTAGEN DOSING -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>⑤ Behandeln · Tab. 7</span>
+    <h2>Gestagen-Dosierung: Standard vs. POI</h2>
+    <table>
+      <thead><tr><th>Gestagen</th><th>Standard</th><th>POI</th></tr></thead>
+      <tbody>
+        <tr><td>Mikronisiertes Progesteron</td><td>100–200 mg</td><td class="poi">≥ 200 mg (300–400 mg)</td></tr>
+        <tr><td>Dydrogesteron</td><td>10 mg</td><td class="poi">20 mg</td></tr>
+        <tr><td>Medroxyprogesteronacetat</td><td>5 mg</td><td class="poi">10 mg</td></tr>
+        <tr><td>Norethisteronacetat</td><td>2,5–5 mg</td><td class="poi">2,5–10 mg</td></tr>
+        <tr><td>LNG-IUS (52 mg)</td><td colspan="2" class="poi">ausreichend für Standard <em>und</em> POI</td></tr>
+      </tbody>
+    </table>
+    <p class="ref">Tab. 7 · Höhere Estrogensubstitution → entsprechend höhere Gestagendosis für sichere Endometriumprotektion.</p>
+  </section>
+
+  <!-- 25 PSYCHOSOZIAL -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>④ Schützen · Psyche</span>
+    <h2>Psychosoziale Aspekte – nicht vergessen</h2>
+    <div class="two-col">
+      <div>
+        <p>Die Diagnose ist für viele ein <strong>lebensveränderndes Ereignis</strong>: Kontrollverlust, Verunsicherung, Trauer (Fertilität, Weiblichkeitsbild).</p>
+        <ul class="clean">
+          <li>Signifikant ↑ Risiko für <strong>Angststörungen und Depression</strong> (Metaanalysen)</li>
+          <li>Reduzierte Lebensqualität</li>
+        </ul>
+      </div>
+      <div class="card tint2">
+        <h3>Leitliniengerecht =<br>ganzheitlich</h3>
+        <p>Über die somatische Therapie hinaus: <strong>frühzeitiges, proaktives Angebot psychosozialer / psychotherapeutischer Unterstützung</strong>.</p>
+      </div>
+    </div>
+    <p class="note">Kommunikation zählt: Zeit, Empathie und klare Information über Therapie- und (Familienplanungs-)Optionen.</p>
+  </section>
+
+  <!-- 26 CASE RESOLUTION -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>Rückblick auf den Fall</span>
+    <h2>Unsere 32-jährige Patientin</h2>
+    <div class="grid g3">
+      <div class="card tint"><h3>Diagnose</h3><p class="muted">Amenorrhoe &gt; 6 Mon. + FSH 38 IU/l + Alter &lt; 40 → <strong>POI</strong> (FSH-Kontrolle bei klarem Bild verzichtbar).</p></div>
+      <div class="card tint2"><h3>Abklärung</h3><p class="muted">Karyotyp, FMR1, 21-OH-AK + TSH; DXA; kardiometabolische Basis. Familienanamnese gezielt nutzen.</p></div>
+      <div class="card warn"><h3>Therapie</h3><p class="muted">POI-dosierte, transdermal-bevorzugte Estrogen-/Gestagentherapie bis ~51 J.; Kinderwunsch &amp; Psyche adressieren.</p></div>
+    </div>
+    <p class="note">Die „drei entscheidenden Fragen“: Ist es wirklich POI? Steckt eine behandelbare Ursache/Komorbidität dahinter? Sind die Langzeitrisiken adressiert?</p>
+  </section>
+
+  <!-- 27 TAKE HOME -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>⑥ Festigen</span>
+    <h2>Take-home messages</h2>
+    <ul class="clean check" style="font-size:1.1rem">
+      <li><strong>Diagnose:</strong> &lt; 40 J. + Oligo-/Amenorrhoe ≥ 4–6 Mon. + FSH &gt; 25 IU/l.</li>
+      <li><strong>Ursache suchen lohnt:</strong> Karyotyp + FMR1 immer; 21-OH-AK + TSH als immunologische Basis.</li>
+      <li><strong>POI ist systemisch:</strong> Herz, Knochen, Hirn, Stoffwechsel und Psyche sind mitbetroffen.</li>
+      <li><strong>POI = kardiovaskulärer &amp; ossärer Risikofaktor:</strong> früh stratifizieren, DXA bei Diagnose.</li>
+      <li><strong>Therapie ist Substitution, keine Option:</strong> höhere E2-Dosen, angepasstes Gestagen, bis ~51 J.</li>
+      <li><strong>Ganzheitlich denken:</strong> Fertilität, Familie/Genetik und Psyche aktiv ansprechen.</li>
+    </ul>
+  </section>
+
+  <!-- 28 QUIZ -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>⑥ Festigen · Selbstkontrolle</span>
+    <h2>Quiz: Welcher Marker ist der verlässlichste für eine autoimmune POI?</h2>
+    <div class="quiz" id="quiz">
+      <button class="opt" data-correct="false">A) Anti-Ovar-Antikörper (AOA)</button>
+      <button class="opt" data-correct="true">B) Antikörper gegen 21-Hydroxylase</button>
+      <button class="opt" data-correct="false">C) TPO-Antikörper</button>
+      <button class="opt" data-correct="false">D) Anti-FMR1-Antikörper</button>
+      <div class="explain" id="explain">
+        <strong>Richtig: B.</strong> Die 21-Hydroxylase-Antikörper gelten laut ESHRE als verlässlichster Marker der autoimmunen POI und signalisieren zugleich ein Risiko für adrenale Insuffizienz (M. Addison). AOA sind nicht standardisiert und korrelieren kaum mit dem Schweregrad; „Anti-FMR1-Antikörper“ existieren in diesem Kontext nicht.
+      </div>
+    </div>
+  </section>
+
+  <!-- 29 QUELLEN -->
+  <section class="slide">
+    <span class="kicker"><span class="dot"></span>Quellen &amp; Hinweise</span>
+    <h2>Grundlage &amp; Disclaimer</h2>
+    <p><strong>Primärquelle:</strong> Bralo H., Bachmann A., Freerksen-Kirschner N. et al. „POI – Prämature Ovarialinsuffizienz – Was ist zu beachten?“ <em>FRAUENARZT</em> 4/2026, Fortbildung &amp; Kongress.</p>
+    <p><strong>Leitlinie:</strong> Panay N., Anderson R.A., Bennie A. et al. ESHRE, ASRM, CREWHIRL &amp; IMS Guideline Group on POI – Evidence-based guideline: premature ovarian insufficiency. <em>Climacteric</em> 2025; 27(6): 510–520.</p>
+    <hr class="hr">
+    <p class="note">Diese Folien dienen ausschließlich der ärztlichen Fortbildung und ersetzen weder die Lektüre der Originalleitlinie noch die individuelle klinische Entscheidung. Dosierungsangaben sind vor Anwendung mit aktueller Fachinformation/Leitlinie abzugleichen.</p>
+    <p class="ref">Didaktische Aufbereitung für Assistenzärzt:innen · Stand der Bearbeitung: Juni 2026.</p>
+  </section>
+
+</div>
+
+<!-- chrome -->
+<div class="counter"><span id="cur">1</span> / <span id="total">29</span></div>
+<div class="nav">
+  <button id="prev" aria-label="Zurück">‹</button>
+  <button id="next" aria-label="Weiter">›</button>
+</div>
+<div class="chrome">
+  <span class="brand">POI · Fortbildung Gynäkologische Endokrinologie</span>
+  <span>ESHRE 2025 · FRAUENARZT 4/2026</span>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  let i = 0;
+  const total = slides.length;
+  document.getElementById('total').textContent = total;
+  const progress = document.getElementById('progress');
+  const cur = document.getElementById('cur');
+
+  function show(n){
+    i = Math.max(0, Math.min(total-1, n));
+    slides.forEach((s,k)=>s.classList.toggle('active', k===i));
+    progress.style.width = ((i+1)/total*100) + '%';
+    cur.textContent = i+1;
+    location.hash = i+1;
+  }
+  function next(){ show(i+1); }
+  function prev(){ show(i-1); }
+
+  document.getElementById('next').onclick = next;
+  document.getElementById('prev').onclick = prev;
+
+  document.addEventListener('keydown', e=>{
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){ next(); e.preventDefault(); }
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){ prev(); }
+    else if(e.key==='Home'){ show(0); }
+    else if(e.key==='End'){ show(total-1); }
+    else if(e.key.toLowerCase()==='f'){
+      if(!document.fullscreenElement){ document.documentElement.requestFullscreen?.(); }
+      else { document.exitFullscreen?.(); }
+    }
+    else if(e.key.toLowerCase()==='o'){ document.body.classList.toggle('overview'); }
+  });
+
+  // swipe (touch)
+  let x0=null;
+  document.addEventListener('touchstart',e=>x0=e.touches[0].clientX,{passive:true});
+  document.addEventListener('touchend',e=>{
+    if(x0===null) return;
+    const dx=e.changedTouches[0].clientX-x0;
+    if(Math.abs(dx)>50){ dx<0?next():prev(); }
+    x0=null;
+  },{passive:true});
+
+  // quiz
+  document.querySelectorAll('#quiz .opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const correct = btn.dataset.correct==='true';
+      btn.classList.add(correct?'correct':'wrong');
+      if(!correct){
+        document.querySelector('#quiz .opt[data-correct="true"]').classList.add('correct');
+      }
+      document.getElementById('explain').classList.add('show');
+      document.querySelectorAll('#quiz .opt').forEach(b=>b.disabled=true);
+    });
+  });
+
+  // deep-link via hash
+  const start = parseInt(location.hash.replace('#',''))||1;
+  show(start-1);
+</script>
+</body>
+</html>
